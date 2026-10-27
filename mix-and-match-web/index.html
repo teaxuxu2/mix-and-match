@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<!-- =====================================================
+     Mix & Match Calories – Version 1.1 (EN/DE)
+     Aufbau:  index.html       = das Haus (Struktur)
+              css/style.css    = die Einrichtung (Aussehen)
+              js/texte.js      = das zweisprachige Klingelschild (alle Texte EN + DE)
+              js/startdaten.js = die Erstmieter (Start-Lebensmittel)
+              js/speicher.js   = der Keller (localStorage)
+              js/app.js        = die Hausmeister (alle Funktionen)
+     Texte im HTML sind nur Platzhalter: data-t="..." sagt, welcher
+     Text aus texte.js hier in der gewählten Sprache hinkommt.
+     ===================================================== -->
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#0b1218">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Mix & Match Calories</title>
+    <meta name="description" content="Mix your favorite foods into your perfect day – calories and protein are calculated automatically.">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" type="image/png" href="bilder/icon/favicon.png">
+    <link rel="apple-touch-icon" href="bilder/icon/apple-touch-icon.png">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body data-tab="plan">
+
+    <!-- ===== Kopfbereich: Logo + Buttons ===== -->
+    <header class="kopf">
+        <h1 class="logo">
+            mix<span>&amp;</span>match
+            <small>CALORIES</small>
+        </h1>
+
+        <div class="kopf-aktionen">
+            <button type="button" class="knopf-primaer" id="knopfNeu">
+                <span aria-hidden="true">＋</span> <span data-t="neu">Add Food</span>
+            </button>
+            <button type="button" class="knopf-icon" id="knopfEinstellungen" data-t-aria="einstellungen" aria-label="Settings">⋮</button>
+        </div>
+    </header>
+
+    <!-- ===== Beschreibung + Sprachwahl ===== -->
+    <div class="intro">
+        <p class="beschreibung" data-t-html="beschreibung">
+            Mix your favorite foods into your perfect day –
+            <span>calories and protein</span> are calculated automatically.
+        </p>
+        <div class="sprachwahl" role="group" data-t-aria="sprachwahl" aria-label="Language">
+            <button type="button" data-sprache="en" lang="en">EN</button>
+            <button type="button" data-sprache="de" lang="de">DE</button>
+        </div>
+    </div>
+
+    <!-- ===== What I Eat in a Day: Story-Kreise der Menschen, die inspirieren ===== -->
+    <section class="creators" aria-labelledby="creatorsTitel">
+        <h2 id="creatorsTitel" class="creators-titel" data-t="creators">What I Eat in a Day</h2>
+        <p class="creators-unter" data-t="creatorsUnter">Recipes and ideas from your favorite people on Instagram and YouTube</p>
+        <div id="storyLeiste" class="story-leiste"></div>
+    </section>
+
+    <!-- ===== Umschalter fürs Handy: Tag oder Lebensmittel ===== -->
+    <nav class="tabs" aria-label="Sections">
+        <button type="button" class="tab" data-tab="plan" data-t="tabTag">My Day</button>
+        <button type="button" class="tab" data-tab="foods" data-t="tabFoods">Foods</button>
+    </nav>
+
+    <main class="layout">
+
+        <!-- ===== Bereich: Meine Lebensmittel ===== -->
+        <section class="bereich bereich-foods">
+
+            <label class="suche">
+                <span aria-hidden="true">🔍</span>
+                <input id="suche" type="search" data-t-ph="suche" placeholder="Search foods ..." autocomplete="off">
+                <button type="button" class="suche-scan" id="knopfScan" data-t-aria="scanOeffnen" data-t-title="scanOeffnen" aria-label="Scan barcode" title="Scan barcode">
+                    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M7 8v8M10 8v8M13 8v8M16.5 8v8" stroke="currentColor" stroke-width="1.6"/></svg>
+                </button>
+            </label>
+
+            <div class="filter" role="group">
+                <button type="button" class="chip aktiv" data-filter="alle" data-t="filterAlle">All</button>
+                <button type="button" class="chip" data-filter="favoriten" data-t="filterFav">Favorites</button>
+                <button type="button" class="chip" data-filter="eigene" data-t="filterEigene">My Foods</button>
+                <button type="button" class="chip" data-filter="rezepte" data-t="filterRezepte">Recipes</button>
+                <button type="button" class="chip chip-plus" id="knopfNeuKlein" data-t-aria="lmHinzu" aria-label="Add food">＋</button>
+            </div>
+
+            <div id="lebensmittelListe" class="liste"></div>
+        </section>
+
+        <!-- ===== Bereich: Mein Tag ===== -->
+        <section class="bereich bereich-plan">
+
+            <div class="zusammenfassung">
+                <div class="datum-leiste">
+                    <button type="button" class="knopf-pfeil" id="tagZurueck" data-t-aria="tagZurueck" aria-label="Previous day">‹</button>
+                    <button type="button" class="datum-text" id="datumText" data-t-title="zuHeute" title="Back to today">Today</button>
+                    <button type="button" class="knopf-pfeil" id="tagVor" data-t-aria="tagVor" aria-label="Next day">›</button>
+                </div>
+
+                <div class="ringe">
+                    <div class="ring" id="ringKcal">
+                        <svg viewBox="0 0 120 120" aria-hidden="true">
+                            <circle class="ring-hinten" cx="60" cy="60" r="52"></circle>
+                            <circle class="ring-wert" cx="60" cy="60" r="52"></circle>
+                        </svg>
+                        <div class="ring-text">
+                            <span class="ring-icon">🔥</span>
+                            <strong id="kcalIst">0</strong>
+                            <small id="kcalZiel">/ 2,200 kcal</small>
+                        </div>
+                    </div>
+
+                    <div class="ring" id="ringProtein">
+                        <svg viewBox="0 0 120 120" aria-hidden="true">
+                            <circle class="ring-hinten" cx="60" cy="60" r="52"></circle>
+                            <circle class="ring-wert" cx="60" cy="60" r="52"></circle>
+                        </svg>
+                        <div class="ring-text">
+                            <span class="ring-icon">💪</span>
+                            <strong id="proteinIst">0 g</strong>
+                            <small id="proteinZiel">/ 160 g Protein</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="balken" id="balken"></div>
+            </div>
+
+            <div id="mahlzeiten" class="mahlzeiten"></div>
+        </section>
+    </main>
+
+    <!-- ===== Fenster: Lebensmittel anlegen / bearbeiten ===== -->
+    <dialog id="dialogFormular" class="fenster">
+        <form id="formular" method="dialog" novalidate>
+            <div class="fenster-kopf">
+                <h2 id="formularTitel">Add Food</h2>
+                <button type="button" class="knopf-icon" data-schliessen data-t-aria="schliessen" aria-label="Close">✕</button>
+            </div>
+
+            <div class="eingabe-karte">
+                <label class="foto-feld" id="formFotoFeld" for="fotoInput">
+                    <span id="fotoText" class="foto-text">
+                        <span class="foto-icon" aria-hidden="true">📷</span>
+                        <span data-t="fotoHoch">UPLOAD PHOTO</span>
+                    </span>
+                    <img id="fotoVorschau" alt="">
+                </label>
+                <input id="fotoInput" type="file" accept="image/*" hidden>
+
+                <div class="eingabe-rechts">
+                    <input id="eingabeName" class="eingabe-name" type="text" data-t-ph="name" placeholder="Food name" maxlength="60" autocomplete="off">
+
+                    <div class="menge-steuerung">
+                        <button type="button" class="rund minus" id="formMinus" data-t-aria="weniger" aria-label="Less">−</button>
+                        <label class="menge-wert">
+                            <input id="eingabeMenge" type="text" inputmode="decimal" value="100" data-t-aria="menge" aria-label="Amount in grams">
+                            <span>g</span>
+                        </label>
+                        <button type="button" class="rund plus" id="formPlus" data-t-aria="mehr" aria-label="More">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="werte-zeile">
+                <label class="wert-feld">
+                    <span class="wert-icon" aria-hidden="true">🔥</span>
+                    <input id="eingabeKcal" type="text" inputmode="decimal" placeholder="0">
+                    <span class="einheit">kcal</span>
+                </label>
+                <label class="wert-feld">
+                    <span class="wert-icon" aria-hidden="true">💪</span>
+                    <input id="eingabeProtein" type="text" inputmode="decimal" placeholder="0">
+                    <span class="einheit" data-t="gProtein">g protein</span>
+                </label>
+            </div>
+
+            <div class="werte-zeile">
+                    <label class="wert-feld">
+                        <span class="wert-icon" aria-hidden="true">🌾</span>
+                        <input id="eingabeKh" type="text" inputmode="decimal" placeholder="0">
+                        <span class="einheit" data-t="gKh">g carbs</span>
+                    </label>
+                    <label class="wert-feld">
+                        <span class="wert-icon" aria-hidden="true">💧</span>
+                        <input id="eingabeFett" type="text" inputmode="decimal" placeholder="0">
+                        <span class="einheit" data-t="gFett">g fat</span>
+                    </label>
+                </div>
+
+            <p class="hinweis" data-t="hinweis">All values are optional.</p>
+            <p class="fehler" id="formularFehler" role="alert"></p>
+
+            <div class="fenster-aktionen">
+                <button type="button" class="knopf-text" id="fotoEntfernen" data-t="fotoWeg" hidden>Remove photo</button>
+                <button type="submit" class="knopf-primaer breit" id="formularSpeichern">Save Food</button>
+            </div>
+        </form>
+    </dialog>
+
+    <!-- ===== Fenster: Was anlegen? Lebensmittel oder Rezept ===== -->
+    <dialog id="dialogNeu" class="fenster">
+        <div class="fenster-kopf">
+            <h2 data-t="neuWas">What do you want to add?</h2>
+            <button type="button" class="knopf-icon" data-schliessen data-t-aria="schliessen" aria-label="Close">✕</button>
+        </div>
+        <div class="neu-auswahl">
+            <button type="button" class="neu-karte" id="neuLebensmittel">
+                <span class="neu-icon" aria-hidden="true">🥑</span>
+                <span><b data-t="neuLm">Food</b><small data-t="neuLmText">One product with its nutrition values</small></span>
+            </button>
+            <button type="button" class="neu-karte" id="neuRezept">
+                <span class="neu-icon" aria-hidden="true">🍳</span>
+                <span><b data-t="neuRezept">Recipe</b><small data-t="neuRezeptText">Combine ingredients</small></span>
+            </button>
+            <button type="button" class="neu-karte" id="neuScan">
+                <span class="neu-icon" aria-hidden="true">📷</span>
+                <span><b data-t="neuScan">Scan barcode</b><small data-t="neuScanText">Point the camera at the package</small></span>
+            </button>
+        </div>
+    </dialog>
+
+    <!-- ===== Fenster: Barcode-Scanner ===== -->
+    <dialog id="dialogScan" class="fenster">
+        <div class="fenster-kopf">
+            <h2 data-t="scanTitel">Scan barcode</h2>
+            <button type="button" class="knopf-icon" data-schliessen data-t-aria="schliessen" aria-label="Close">✕</button>
+        </div>
+        <div id="scanKamera" class="scan-kamera">
+            <video id="scanVideo" playsinline muted></video>
+            <div class="scan-rahmen" aria-hidden="true"></div>
+        </div>
+        <p id="scanStatus" class="scan-status" role="status" aria-live="polite"></p>
+        <div id="scanErgebnis" class="scan-ergebnis"></div>
+        <label class="scan-feld">
+            <span data-t="scanEintippen">Or type the numbers under the barcode</span>
+            <span class="scan-zeile">
+                <input id="scanEingabe" class="eingabe-name" type="text" inputmode="numeric" autocomplete="off" maxlength="14" placeholder="9001234567890">
+                <button type="button" class="knopf-primaer" id="scanSuchen" data-t="scanSuchen">Search</button>
+            </span>
+        </label>
+        <p id="scanFehler" class="fehler" role="alert"></p>
+        <button type="button" class="knopf-zweit" id="scanNochmal" data-t="scanNochmal">Scan again</button>
+    </dialog>
+
+    <!-- ===== Fenster: Rezept anlegen / bearbeiten ===== -->
+    <dialog id="dialogRezept" class="fenster">
+        <form id="formRezept" method="dialog" novalidate>
+            <div class="fenster-kopf">
+                <h2 id="rezeptTitel">New Recipe</h2>
+                <button type="button" class="knopf-icon" data-schliessen data-t-aria="schliessen" aria-label="Close">✕</button>
+            </div>
+
+            <div class="eingabe-karte">
+                <label class="foto-feld" id="rezeptFotoFeld" for="rezeptFotoInput">
+                    <span class="foto-text">
+                        <span class="foto-icon" aria-hidden="true">📷</span>
+                        <span data-t="fotoHoch">UPLOAD PHOTO</span>
+                    </span>
+                    <img id="rezeptFotoVorschau" class="foto-vorschau" alt="">
+                </label>
+                <input id="rezeptFotoInput" type="file" accept="image/*" hidden>
+                <div class="eingabe-rechts">
+                    <input id="rezeptName" class="eingabe-name" type="text" data-t-ph="rezeptName" placeholder="Recipe name" maxlength="60" autocomplete="off">
+                </div>
+            </div>
+
+            <h3 class="zwischentitel" data-t="zutaten">Ingredients</h3>
+            <div id="rezeptZutaten" class="eintraege"></div>
+            <button type="button" class="knopf-hinzu" id="rezeptZutatHinzu" data-t="zutatHinzu">＋ Add ingredient</button>
+
+            <div class="rezept-summe" id="rezeptSumme"></div>
+
+            <div class="werte-zeile">
+                <label class="wert-feld">
+                    <span class="wert-icon" aria-hidden="true">⚖️</span>
+                    <input id="rezeptGewicht" type="text" inputmode="decimal">
+                    <span class="einheit" data-t="gewichtFertig">g finished</span>
+                </label>
+                <label class="wert-feld">
+                    <span class="wert-icon" aria-hidden="true">🍽️</span>
+                    <input id="rezeptPortionen" type="text" inputmode="numeric" placeholder="1">
+                    <span class="einheit" data-t="portionen">portions</span>
+                </label>
+            </div>
+            <p class="hinweis" data-t="rezeptHinweis">Baking and cooking evaporate water.</p>
+
+            <h3 class="zwischentitel" data-t="anleitung">Instructions</h3>
+            <textarea id="rezeptAnleitung" class="anleitung-feld" rows="7" data-t-ph="anleitungPlatzhalter"></textarea>
+            <p class="fehler" id="rezeptFehler" role="alert"></p>
+
+            <div class="fenster-aktionen">
+                <button type="submit" class="knopf-primaer breit" data-t="rezeptSpeichern">Save Recipe</button>
+            </div>
+        </form>
+    </dialog>
+
+    <!-- ===== Fenster: Rezept ansehen (Kochbuch) ===== -->
+    <dialog id="dialogAnsicht" class="fenster ansicht">
+        <div class="fenster-kopf">
+            <h2 id="ansichtTitel">Recipe</h2>
+            <button type="button" class="knopf-icon" data-schliessen data-t-aria="schliessen" aria-label="Close">✕</button>
+        </div>
+        <div class="ansicht-kopf">
+            <div id="ansichtBild"></div>
+            <div>
+                <p class="ansicht-portion" id="ansichtPortion"></p>
+                <div class="ansicht-werte" id="ansichtWerte"></div>
+                <p class="ansicht-100" id="ansicht100"></p>
+            </div>
+        </div>
+
+        <button type="button" id="ansichtCreator" class="creator-link" hidden></button>
+
+        <h3 class="zwischentitel" data-t="zutaten">Ingredients</h3>
+        <ul class="ansicht-zutaten" id="ansichtZutaten"></ul>
+
+        <h3 class="zwischentitel" data-t="anleitung">Instructions</h3>
+        <p class="ansicht-anleitung" id="ansichtAnleitung"></p>
+
+        <p class="unterzeile" id="ansichtPlanText">Add to today's plan:</p>
+        <div class="mahlzeit-knoepfe" id="ansichtMahlzeiten"></div>
+        <div class="aktionen-liste">
+            <button type="button" class="aktion" id="ansichtBearbeiten" data-t="bearbeiten">✎ Edit</button>
+            <button type="button" class="aktion" id="ansichtMehr" data-t="weitereOptionen">⋯ More options</button>
+        </div>
+    </dialog>
+
+    <!-- ===== Fenster: Creator-Profil ===== -->
+    <dialog id="dialogCreator" class="fenster">
+        <div class="fenster-kopf">
+            <h2 id="creatorName">Creator</h2>
+            <button type="button" class="knopf-icon" data-schliessen data-t-aria="schliessen" aria-label="Close">✕</button>
+        </div>
+        <div class="creator-kopf">
+            <div id="creatorFoto" class="creator-foto" role="img"></div>
+            <div class="creator-info">
+                <p id="creatorTitel" class="creator-titel"></p>
+                <a id="creatorInstagram" class="creator-insta" target="_blank" rel="noopener noreferrer">
+                    <span aria-hidden="true">📸</span> <span id="creatorHandle"></span>
+                </a>
+            </div>
+        </div>
+        <ul id="creatorBio" class="creator-bio"></ul>
+        <div id="creatorCodesBox">
+            <h3 class="zwischentitel" data-t="codes">Discount codes</h3>
+            <div id="creatorCodes" class="creator-codes"></div>
+        </div>
+        <h3 class="zwischentitel" id="creatorRezepteTitel">Meals</h3>
+        <div id="creatorRezepte" class="liste"></div>
+    </dialog>
+
+    <!-- ===== Fenster: Lebensmittel für eine Mahlzeit auswählen ===== -->
+    <dialog id="dialogAuswahl" class="fenster">
+        <div class="fenster-kopf">
+            <h2 id="auswahlTitel">Add to Breakfast</h2>
+            <button type="button" class="knopf-icon" data-schliessen data-t-aria="schliessen" aria-label="Close">✕</button>
+        </div>
+        <label class="suche">
+            <span aria-hidden="true">🔍</span>
+            <input id="auswahlSuche" type="search" data-t-ph="suche" placeholder="Search foods ..." autocomplete="off">
+            <button type="button" class="suche-scan" id="auswahlScan" data-t-aria="scanOeffnen" data-t-title="scanOeffnen" aria-label="Scan barcode" title="Scan barcode">
+                <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M7 8v8M10 8v8M13 8v8M16.5 8v8" stroke="currentColor" stroke-width="1.6"/></svg>
+            </button>
+        </label>
+        <div id="auswahlListe" class="liste kompakt"></div>
+    </dialog>
+
+    <!-- ===== Fenster: Aktionen für ein Lebensmittel ===== -->
+    <dialog id="dialogAktionen" class="fenster">
+        <div class="fenster-kopf">
+            <h2 id="aktionenTitel">Food</h2>
+            <button type="button" class="knopf-icon" data-schliessen data-t-aria="schliessen" aria-label="Close">✕</button>
+        </div>
+        <p class="unterzeile" id="aktionenPlanText">Add to today's plan:</p>
+        <div class="mahlzeit-knoepfe" id="aktionenMahlzeiten"></div>
+        <div class="aktionen-liste">
+            <button type="button" class="aktion" id="aktionFavorit">☆ Add to favorites</button>
+            <button type="button" class="aktion" id="aktionBearbeiten" data-t="bearbeiten">✎ Edit</button>
+            <button type="button" class="aktion gefahr" id="aktionLoeschen">🗑 Delete</button>
+        </div>
+    </dialog>
+
+    <!-- ===== Fenster: Einstellungen ===== -->
+    <dialog id="dialogEinstellungen" class="fenster">
+        <form id="formEinstellungen" method="dialog" novalidate>
+            <div class="fenster-kopf">
+                <h2 data-t="ziele">Daily Goals</h2>
+                <button type="button" class="knopf-icon" data-schliessen data-t-aria="schliessen" aria-label="Close">✕</button>
+            </div>
+            <div class="ziele">
+                <label><span>🔥 <span data-t="kalorien">Calories</span></span> <span class="ziel-wert"><input id="zielKcal" type="text" inputmode="numeric"> kcal</span></label>
+                <label><span>💪 <span data-t="protein">Protein</span></span> <span class="ziel-wert"><input id="zielProtein" type="text" inputmode="numeric"> g</span></label>
+                <label><span>🌾 <span data-t="kh">Carbs</span></span> <span class="ziel-wert"><input id="zielKh" type="text" inputmode="numeric"> g</span></label>
+                <label><span>💧 <span data-t="fett">Fat</span></span> <span class="ziel-wert"><input id="zielFett" type="text" inputmode="numeric"> g</span></label>
+            </div>
+            <button type="submit" class="knopf-primaer breit" data-t="zieleSpeichern">Save Goals</button>
+
+            <h3 class="zwischentitel" data-t="sicherung">Backup</h3>
+            <p class="unterzeile" data-t="sicherungText">Your foods are saved only in this browser. Download a backup to keep them safe or move them to another device.</p>
+            <div class="fenster-aktionen zwei">
+                <button type="button" class="knopf-zweit" id="knopfExport" data-t="export">⬇ Download backup</button>
+                <button type="button" class="knopf-zweit" id="knopfImport" data-t="import">⬆ Restore backup</button>
+            </div>
+            <input id="importInput" type="file" accept="application/json,.json" hidden>
+
+            <p class="quellen" data-t="quellen">Nutrition data: USDA FoodData Central and Open Food Facts (openfoodfacts.org, ODbL).</p>
+        </form>
+    </dialog>
+
+    <!-- ===== Kurze Meldungen unten ===== -->
+    <div id="meldung" class="meldung" role="status" aria-live="polite"></div>
+
+    <script src="js/texte.js"></script>
+    <script src="js/startdaten.js"></script>
+    <script src="js/influencer.js"></script>
+    <script src="js/speicher.js"></script>
+    <script src="js/online.js"></script>
+    <script src="js/scanner.js"></script>
+    <script src="js/app.js"></script>
+</body>
+
+</html>

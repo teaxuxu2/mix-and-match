@@ -1,0 +1,1544 @@
+/* =====================================================
+   Mix & Match Calories – Aussehen (Design-Agent)
+   Handy zuerst: Grundregeln gelten fürs Handy,
+   ab 900 px Breite kommen die Desktop-Regeln unten dazu.
+   ===================================================== */
+
+/* ---------- Design-Variablen: EINE Stelle für alle Farben & Größen ---------- */
+:root {
+    --hintergrund: #0b1218;
+    --flaeche: #101923;
+    --flaeche-hell: #18252e;
+    --eingabe: #0d151c;
+    --rand: #263543;
+
+    --akzent: #86f7bd;
+    --akzent-text: #06281a;
+    --text: #ffffff;
+    --text-grau: #9ca6ad;
+    --text-blass: #6b7780;
+
+    --farbe-kcal: #86f7bd;
+    --farbe-protein: #7cc4f2;
+    --farbe-kh: #f6c95e;
+    --farbe-fett: #f49ac1;
+    --farbe-feuer: #ff8a4c;
+    --farbe-fehler: #ff7a7a;
+
+    --radius-gross: 20px;
+    --radius: 14px;
+    --radius-klein: 10px;
+
+    --schrift: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+/* ---------- Grundlagen ---------- */
+* {
+    box-sizing: border-box;
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    margin: 0;
+    padding: 16px 16px calc(32px + env(safe-area-inset-bottom));
+    background: var(--hintergrund);
+    color: var(--text);
+    font-family: var(--schrift);
+    font-size: 15px;
+    line-height: 1.4;
+    min-height: 100vh;
+}
+
+button,
+input {
+    font: inherit;
+    color: inherit;
+}
+
+button {
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+input {
+    font-size: 16px; /* verhindert das automatische Hineinzoomen am iPhone */
+}
+
+/* ---------- Kopfbereich ---------- */
+.kopf {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.logo {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    line-height: 1;
+}
+
+.logo span {
+    color: var(--akzent);
+}
+
+.logo small {
+    display: block;
+    margin-top: 6px;
+    color: var(--akzent);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 7px;
+}
+
+.kopf-aktionen {
+    display: flex;
+    gap: 8px;
+}
+
+.intro {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin: 14px 0 16px;
+}
+
+.intro .beschreibung {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+}
+
+/* Sprachwahl EN | DE */
+.sprachwahl {
+    display: flex;
+    flex: none;
+    padding: 3px;
+    background: var(--flaeche);
+    border: 1px solid var(--rand);
+    border-radius: 10px;
+}
+
+.sprachwahl button {
+    min-width: 40px;
+    min-height: 32px;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--text-grau);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1px;
+}
+
+.sprachwahl button.aktiv {
+    background: var(--akzent);
+    color: var(--akzent-text);
+}
+
+.beschreibung {
+    margin: 14px 0 16px;
+    color: var(--text-grau);
+    font-size: 13px;
+}
+
+.beschreibung span {
+    color: var(--akzent);
+}
+
+/* ---------- Buttons ---------- */
+.knopf-primaer {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 44px;
+    padding: 0 16px;
+    border: none;
+    border-radius: 12px;
+    background: var(--akzent);
+    color: var(--akzent-text);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.knopf-primaer.breit {
+    width: 100%;
+}
+
+.knopf-icon {
+    width: 44px;
+    height: 44px;
+    flex: none;
+    border: 1px solid var(--rand);
+    border-radius: 12px;
+    background: var(--flaeche);
+    font-size: 20px;
+    line-height: 1;
+}
+
+.knopf-icon.klein {
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: transparent;
+    color: var(--text-grau);
+}
+
+.knopf-zweit {
+    min-height: 44px;
+    padding: 0 14px;
+    border: 1px solid var(--rand);
+    border-radius: 12px;
+    background: var(--flaeche-hell);
+}
+
+.knopf-text {
+    min-height: 44px;
+    border: none;
+    background: none;
+    color: var(--text-grau);
+    text-decoration: underline;
+}
+
+/* ---------- Creators: Story-Kreise ---------- */
+.creators {
+    margin: 0 0 16px;
+}
+
+.creators-titel {
+    margin: 0;
+    color: var(--text);
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: -0.2px;
+}
+
+.creators-unter {
+    margin: 2px 0 10px;
+    color: var(--text-grau);
+    font-size: 12px;
+}
+
+.story-leiste {
+    display: flex;
+    gap: 14px;
+    overflow-x: auto;
+    padding: 2px 2px 6px;
+    scrollbar-width: none;
+}
+
+.story-leiste::-webkit-scrollbar {
+    display: none;
+}
+
+.story {
+    position: relative;
+    flex: none;
+    width: 76px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--text);
+}
+
+.story-ring {
+    width: 72px;
+    height: 72px;
+    padding: 3px;
+    border-radius: 50%;
+    background: var(--rand);
+}
+
+.story.neu .story-ring {
+    background: linear-gradient(135deg, var(--akzent), var(--farbe-protein), var(--akzent));
+    box-shadow: 0 0 14px rgba(134, 247, 189, 0.35);
+}
+
+.story-ring img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border: 3px solid var(--hintergrund);
+    border-radius: 50%;
+}
+
+.story-name {
+    max-width: 76px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 11px;
+}
+
+.story-neu {
+    position: absolute;
+    top: 58px;
+    padding: 1px 6px;
+    border-radius: 6px;
+    background: var(--akzent);
+    color: var(--akzent-text);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+.story.bald {
+    color: var(--text-blass);
+    cursor: default;
+}
+
+.story.bald .story-ring {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: 2px dashed var(--rand);
+    font-size: 24px;
+}
+
+/* ---------- Tabs (nur Handy) ---------- */
+.tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    padding: 4px;
+    margin-bottom: 14px;
+    background: var(--flaeche);
+    border: 1px solid var(--rand);
+    border-radius: 14px;
+}
+
+.tab {
+    min-height: 40px;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--text-grau);
+    font-weight: 600;
+}
+
+body[data-tab="plan"] .tab[data-tab="plan"],
+body[data-tab="foods"] .tab[data-tab="foods"] {
+    background: var(--flaeche-hell);
+    color: var(--text);
+}
+
+body[data-tab="plan"] .bereich-foods,
+body[data-tab="foods"] .bereich-plan {
+    display: none;
+}
+
+/* ---------- Suche & Filter ---------- */
+.suche {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 14px;
+    min-height: 46px;
+    background: var(--eingabe);
+    border: 1px solid var(--rand);
+    border-radius: 999px;
+    color: var(--text-grau);
+}
+
+.suche input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    background: transparent;
+    outline: none;
+    color: var(--text);
+}
+
+.filter {
+    display: flex;
+    gap: 8px;
+    margin: 12px 0;
+    /* bei vielen Filtern seitlich wischen statt umbrechen */
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.filter::-webkit-scrollbar {
+    display: none;
+}
+
+.chip {
+    flex: none;
+}
+
+.chip {
+    min-height: 38px;
+    padding: 0 14px;
+    border: 1px solid var(--rand);
+    border-radius: 10px;
+    background: var(--flaeche);
+    color: var(--text-grau);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.chip.aktiv {
+    background: var(--akzent);
+    border-color: var(--akzent);
+    color: var(--akzent-text);
+}
+
+.chip-plus {
+    margin-left: auto;
+    width: 38px;
+    padding: 0;
+    font-size: 18px;
+    color: var(--text);
+}
+
+/* ---------- Lebensmittel-Karten in der Liste ---------- */
+.liste {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.lm-karte {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 8px 6px 8px 8px;
+    background: var(--flaeche);
+    border: 1px solid var(--rand);
+    border-radius: var(--radius);
+    text-align: left;
+}
+
+.lm-karte:hover {
+    border-color: #35495b;
+}
+
+.lm-karte.zieht {
+    opacity: 0.5;
+}
+
+.lm-bild {
+    width: 56px;
+    height: 56px;
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: 12px;
+    background: var(--flaeche-hell);
+    font-size: 28px;
+}
+
+.lm-bild img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.lm-bild.klein {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    font-size: 22px;
+}
+
+.lm-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.lm-name {
+    font-weight: 600;
+    line-height: 1.3;
+    /* lange Produktnamen: höchstens zwei Zeilen, dann "…" */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+}
+
+.lm-name .stern {
+    color: var(--farbe-kh);
+}
+
+.lm-werte {
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-grau);
+    font-size: 12px;
+}
+
+.lm-werte.umbruch {
+    white-space: normal;
+}
+
+.lm-bezug {
+    color: var(--text-blass);
+    font-size: 11px;
+}
+
+.leer {
+    padding: 24px 12px;
+    color: var(--text-grau);
+    text-align: center;
+}
+
+/* Kompakte Liste im Auswahl-Fenster */
+.liste.kompakt {
+    margin-top: 12px;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+/* ---------- Zusammenfassung: Datum, Ringe, Balken ---------- */
+.zusammenfassung {
+    padding: 14px;
+    background: var(--flaeche);
+    border: 1px solid var(--rand);
+    border-radius: var(--radius-gross);
+}
+
+.datum-leiste {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.knopf-pfeil {
+    width: 44px;
+    height: 40px;
+    border: none;
+    background: transparent;
+    color: var(--text-grau);
+    font-size: 26px;
+    line-height: 1;
+}
+
+.datum-text {
+    min-width: 150px;
+    min-height: 40px;
+    border: none;
+    background: transparent;
+    font-weight: 600;
+}
+
+.ringe {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    margin: 10px 0 14px;
+}
+
+.ring {
+    position: relative;
+    width: 148px;
+    height: 148px;
+}
+
+.ring svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+}
+
+.ring circle {
+    fill: none;
+    stroke-width: 9;
+}
+
+.ring-hinten {
+    stroke: #1f2c37;
+}
+
+.ring-wert {
+    stroke: var(--akzent);
+    stroke-linecap: round;
+    stroke-dasharray: 326.73;
+    stroke-dashoffset: 326.73;
+    transition: stroke-dashoffset 0.5s ease;
+}
+
+.ring.ueber .ring-wert {
+    stroke: var(--farbe-feuer);
+}
+
+.ring-text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.ring-icon {
+    font-size: 18px;
+}
+
+.ring-text strong {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
+
+.ring-text small {
+    color: var(--text-grau);
+    font-size: 11px;
+}
+
+.balken {
+    display: grid;
+    gap: 10px;
+}
+
+.balken-zeile {
+    display: grid;
+    grid-template-columns: 22px 1fr 40px;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+}
+
+.balken-beschriftung {
+    color: var(--text-grau);
+}
+
+.balken-beschriftung b {
+    color: var(--text);
+}
+
+.balken-spur {
+    height: 7px;
+    margin-top: 4px;
+    background: #1f2c37;
+    border-radius: 99px;
+    overflow: hidden;
+}
+
+.balken-fuellung {
+    height: 100%;
+    border-radius: 99px;
+    transition: width 0.5s ease;
+}
+
+.balken-prozent {
+    color: var(--text-grau);
+    text-align: right;
+}
+
+/* ---------- Mahlzeiten ---------- */
+.mahlzeiten {
+    display: grid;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.mahlzeit {
+    padding: 12px;
+    background: var(--flaeche);
+    border: 1px solid var(--rand);
+    border-radius: var(--radius-gross);
+    transition: border-color 0.15s, background 0.15s;
+}
+
+.mahlzeit.ziel {
+    border-color: var(--akzent);
+    background: #10231f;
+}
+
+.mahlzeit-kopf {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 8px;
+}
+
+.mahlzeit-kopf h3 {
+    margin: 0;
+    font-size: 15px;
+}
+
+.mahlzeit-kopf span {
+    color: var(--akzent);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.eintraege {
+    display: grid;
+    gap: 8px;
+}
+
+.eintrag {
+    display: grid;
+    grid-template-columns: 44px 1fr auto;
+    gap: 10px;
+    align-items: center;
+    padding: 8px;
+    background: var(--flaeche-hell);
+    border-radius: var(--radius);
+}
+
+.eintrag-info {
+    min-width: 0;
+}
+
+.eintrag-oben {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.eintrag-name {
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+}
+
+.eintrag-werte {
+    color: var(--text-grau);
+    font-size: 12px;
+}
+
+.eintrag-entfernen {
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: transparent;
+    color: var(--text-blass);
+    font-size: 16px;
+}
+
+/* Mengen-Steuerung (− 100 g +) – im Tagesplan und im Formular */
+.menge-steuerung {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px;
+    margin-top: 6px;
+    background: var(--eingabe);
+    border: 1px solid var(--rand);
+    border-radius: 999px;
+}
+
+.rund {
+    width: 32px;
+    height: 32px;
+    flex: none;
+    border-radius: 50%;
+    border: 1px solid var(--rand);
+    background: #1c2a35;
+    font-size: 18px;
+    line-height: 1;
+}
+
+.rund.plus {
+    border-color: var(--akzent);
+    color: var(--akzent);
+    background: transparent;
+}
+
+.menge-wert {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    font-weight: 600;
+}
+
+.menge-wert input {
+    width: 46px;
+    padding: 4px 0;
+    border: none;
+    background: transparent;
+    text-align: right;
+    font-weight: 600;
+    outline: none;
+}
+
+.menge-wert span {
+    padding-right: 6px;
+}
+
+.knopf-hinzu {
+    width: 100%;
+    min-height: 48px;
+    margin-top: 8px;
+    border: 1.5px dashed var(--rand);
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--text-grau);
+    font-size: 14px;
+}
+
+.knopf-hinzu:hover {
+    border-color: var(--akzent);
+    color: var(--akzent);
+}
+
+/* ---------- Fenster (Dialoge): am Handy als "Bottom Sheet" ---------- */
+.fenster {
+    width: 100%;
+    max-width: 100%;
+    max-height: 92vh;
+    margin: auto 0 0;
+    padding: 16px 16px calc(20px + env(safe-area-inset-bottom));
+    background: var(--flaeche);
+    color: var(--text);
+    border: 1px solid var(--rand);
+    border-bottom: none;
+    border-radius: 22px 22px 0 0;
+    overflow-y: auto;
+}
+
+.fenster::backdrop {
+    background: rgba(0, 0, 0, 0.6);
+}
+
+.fenster-kopf {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+}
+
+.fenster-kopf h2 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.fenster-aktionen {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-top: 16px;
+}
+
+.fenster-aktionen.zwei > * {
+    flex: 1;
+}
+
+.unterzeile {
+    margin: 0 0 10px;
+    color: var(--text-grau);
+    font-size: 13px;
+}
+
+.zwischentitel {
+    margin: 24px 0 6px;
+    font-size: 15px;
+}
+
+/* ---------- Eingabe-Karte (Entwurf 4) ---------- */
+.eingabe-karte {
+    display: flex;
+    gap: 14px;
+    padding: 12px;
+    background: var(--hintergrund);
+    border: 1px solid var(--rand);
+    border-radius: var(--radius-gross);
+}
+
+.foto-feld {
+    position: relative;
+    width: 96px;
+    height: 96px;
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border: 2px dashed #3a4a58;
+    border-radius: 14px;
+    cursor: pointer;
+}
+
+.foto-text {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    color: var(--akzent);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-align: center;
+}
+
+.foto-icon {
+    font-size: 22px;
+}
+
+#fotoVorschau,
+.foto-vorschau {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: none;
+}
+
+.foto-feld.hat-foto {
+    border-style: solid;
+    border-color: var(--rand);
+}
+
+.foto-feld.hat-foto #fotoVorschau,
+.foto-feld.hat-foto .foto-vorschau {
+    display: block;
+}
+
+.foto-feld.hat-foto .foto-text {
+    display: none;
+}
+
+.eingabe-rechts {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 6px;
+}
+
+.eingabe-name {
+    width: 100%;
+    min-height: 46px;
+    padding: 0 14px;
+    background: var(--eingabe);
+    border: 1px solid var(--rand);
+    border-radius: 12px;
+    outline: none;
+}
+
+.eingabe-name:focus,
+.wert-feld:focus-within,
+.suche:focus-within {
+    border-color: var(--akzent);
+}
+
+.werte-zeile {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.wert-feld {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 48px;
+    padding: 0 12px;
+    background: var(--hintergrund);
+    border: 1px solid var(--rand);
+    border-radius: 12px;
+}
+
+.wert-feld input {
+    width: 100%;
+    min-width: 0;
+    border: none;
+    background: transparent;
+    outline: none;
+    font-weight: 600;
+}
+
+.wert-icon {
+    font-size: 18px;
+}
+
+.einheit {
+    color: var(--text-grau);
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.mehr-werte {
+    margin-top: 12px;
+}
+
+.mehr-werte summary {
+    color: var(--text-grau);
+    font-size: 13px;
+    cursor: pointer;
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+}
+
+.hinweis {
+    margin: 12px 0 0;
+    color: var(--text-blass);
+    font-size: 12px;
+}
+
+.fehler {
+    min-height: 1em;
+    margin: 6px 0 0;
+    color: var(--farbe-fehler);
+    font-size: 13px;
+}
+
+/* ---------- Aktionen-Fenster ---------- */
+.mahlzeit-knoepfe {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.mahlzeit-knoepfe button {
+    min-height: 44px;
+    border: 1px solid var(--akzent);
+    border-radius: 12px;
+    background: transparent;
+    color: var(--akzent);
+    font-weight: 600;
+}
+
+.aktionen-liste {
+    display: grid;
+    gap: 6px;
+    margin-top: 16px;
+}
+
+.aktion {
+    min-height: 48px;
+    padding: 0 14px;
+    border: none;
+    border-radius: 12px;
+    background: var(--flaeche-hell);
+    text-align: left;
+}
+
+.aktion.gefahr {
+    color: var(--farbe-fehler);
+}
+
+.aktion.gefahr.sicher {
+    background: var(--farbe-fehler);
+    color: #2a0b0b;
+    font-weight: 600;
+}
+
+/* ---------- Einstellungen ---------- */
+.ziele {
+    display: grid;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.ziele label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    min-height: 48px;
+    padding: 0 12px;
+    background: var(--hintergrund);
+    border: 1px solid var(--rand);
+    border-radius: 12px;
+}
+
+.ziele .ziel-wert {
+    color: var(--text-grau);
+    font-size: 13px;
+}
+
+.ziele input {
+    width: 70px;
+    border: none;
+    background: transparent;
+    text-align: right;
+    font-weight: 600;
+    outline: none;
+    color: var(--text);
+}
+
+.quellen {
+    margin: 20px 0 0;
+    color: var(--text-blass);
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+/* ---------- Neu anlegen: Lebensmittel oder Rezept ---------- */
+.neu-auswahl {
+    display: grid;
+    gap: 10px;
+}
+
+.neu-karte {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px;
+    border: 1px solid var(--rand);
+    border-radius: var(--radius);
+    background: var(--flaeche-hell);
+    text-align: left;
+}
+
+.neu-karte:hover {
+    border-color: var(--akzent);
+}
+
+.neu-icon {
+    font-size: 30px;
+}
+
+.neu-karte b {
+    display: block;
+    font-size: 16px;
+}
+
+.neu-karte small {
+    color: var(--text-grau);
+    font-size: 13px;
+}
+
+/* ---------- Rezept ---------- */
+#rezeptZutaten:empty::before {
+    content: attr(data-leer);
+    display: block;
+    padding: 10px 0;
+    color: var(--text-grau);
+    font-size: 13px;
+}
+
+.rezept-summe {
+    display: grid;
+    gap: 4px;
+    margin-top: 12px;
+    padding: 12px;
+    background: var(--hintergrund);
+    border: 1px solid var(--rand);
+    border-radius: 12px;
+    color: var(--text-grau);
+    font-size: 13px;
+}
+
+.rezept-summe b {
+    color: var(--akzent);
+    font-weight: 600;
+}
+
+.rezept-summe:empty {
+    display: none;
+}
+
+/* ---------- Kochbuch: Anleitung & Rezept-Ansicht ---------- */
+.anleitung-feld {
+    width: 100%;
+    padding: 12px 14px;
+    background: var(--hintergrund);
+    border: 1px solid var(--rand);
+    border-radius: 12px;
+    color: var(--text);
+    font: inherit;
+    font-size: 16px;
+    line-height: 1.5;
+    resize: vertical;
+    outline: none;
+}
+
+.anleitung-feld:focus {
+    border-color: var(--akzent);
+}
+
+.ansicht-kopf {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+}
+
+.lm-bild.gross {
+    width: 104px;
+    height: 104px;
+    border-radius: 18px;
+    font-size: 52px;
+}
+
+.ansicht-portion {
+    margin: 0 0 6px;
+    color: var(--text-grau);
+    font-size: 13px;
+}
+
+.ansicht-werte {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.ansicht-100 {
+    margin: 6px 0 0;
+    color: var(--text-blass);
+    font-size: 12px;
+}
+
+.ansicht-zutaten {
+    display: grid;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.ansicht-zutaten li {
+    display: grid;
+    grid-template-columns: 28px 72px 1fr;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px;
+    background: var(--flaeche-hell);
+    border-radius: 10px;
+    font-size: 14px;
+}
+
+.ansicht-zutaten .menge {
+    color: var(--akzent);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.ansicht-zutaten .fehlt {
+    color: var(--farbe-fehler);
+    font-size: 12px;
+}
+
+.ansicht-anleitung {
+    margin: 0 0 20px;
+    white-space: pre-line;
+    line-height: 1.6;
+    font-size: 15px;
+}
+
+.ansicht-anleitung.leer-text {
+    color: var(--text-grau);
+}
+
+/* ---------- Creator-Profil ---------- */
+.creator-kopf {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.creator-foto {
+    width: 92px;
+    height: 92px;
+    flex: none;
+    overflow: hidden;
+    border-radius: 50%;
+    border: 3px solid var(--akzent);
+}
+
+.creator-foto img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Initialen, solange kein Porträt da ist */
+.creator-initialen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    border: 3px solid var(--hintergrund);
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1d3b33, #18252e);
+    color: var(--akzent);
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+.creator-foto .creator-initialen {
+    border: none;
+    font-size: 30px;
+}
+
+.creator-info {
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+}
+
+.creator-titel {
+    margin: 0;
+    color: var(--text-grau);
+    font-size: 14px;
+}
+
+.creator-insta {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    justify-self: start;
+    min-height: 40px;
+    padding: 0 14px;
+    border-radius: 999px;
+    background: var(--akzent);
+    color: var(--akzent-text);
+    font-weight: 600;
+    font-size: 14px;
+    text-decoration: none;
+}
+
+.creator-bio {
+    display: grid;
+    gap: 4px;
+    margin: 14px 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: 14px;
+}
+
+.creator-codes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.creator-codes button {
+    min-height: 40px;
+    padding: 0 12px;
+    border: 1px dashed var(--akzent);
+    border-radius: 10px;
+    background: transparent;
+    color: var(--text);
+    font-size: 13px;
+}
+
+.creator-codes b {
+    color: var(--akzent);
+    letter-spacing: 1px;
+}
+
+.creator-link {
+    margin: 12px 0 0;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--akzent);
+    font-size: 14px;
+    font-weight: 600;
+    text-align: left;
+}
+
+/* ---------- Meldung (Toast) ---------- */
+.meldung {
+    position: fixed;
+    left: 50%;
+    bottom: calc(20px + env(safe-area-inset-bottom));
+    z-index: 50;
+    max-width: calc(100% - 32px);
+    padding: 12px 18px;
+    background: #1f2d38;
+    border: 1px solid var(--rand);
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    font-size: 14px;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, 10px);
+    transition: opacity 0.2s, transform 0.2s;
+}
+
+.meldung.sichtbar {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+
+.meldung.fehler-meldung {
+    border-color: var(--farbe-fehler);
+}
+
+/* ---------- Sehr schmale Handys ---------- */
+@media (max-width: 370px) {
+    .ring {
+        width: 128px;
+        height: 128px;
+    }
+
+    .ring-text strong {
+        font-size: 22px;
+    }
+
+    .knopf-primaer {
+        padding: 0 12px;
+    }
+}
+
+/* =====================================================
+   Desktop: ab 900 px Breite
+   Lebensmittel links, Tag rechts – wie im großen Entwurf
+   ===================================================== */
+@media (min-width: 900px) {
+    body {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 28px 32px 40px;
+    }
+
+    .logo {
+        font-size: 34px;
+    }
+
+    .tabs {
+        display: none;
+    }
+
+    .filter {
+        flex-wrap: wrap;
+        overflow: visible;
+    }
+
+    .story,
+    .story-name {
+        width: 88px;
+        max-width: 88px;
+    }
+
+    .story-ring {
+        width: 84px;
+        height: 84px;
+    }
+
+    .story-neu {
+        top: 70px;
+    }
+
+    body[data-tab] .bereich-foods,
+    body[data-tab] .bereich-plan {
+        display: block;
+    }
+
+    .layout {
+        display: grid;
+        grid-template-columns: 390px 1fr;
+        gap: 20px;
+        align-items: start;
+    }
+
+    .bereich-foods {
+        position: sticky;
+        top: 20px;
+        padding: 14px;
+        background: var(--flaeche);
+        border: 1px solid var(--rand);
+        border-radius: var(--radius-gross);
+        max-height: calc(100vh - 40px);
+        overflow-y: auto;
+    }
+
+    .bereich-foods .lm-karte .knopf-icon.klein {
+        width: 24px;
+    }
+
+    .bereich-foods .lm-karte {
+        background: var(--flaeche-hell);
+        border-color: transparent;
+        cursor: grab;
+    }
+
+    .zusammenfassung {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        grid-template-areas:
+            "datum datum"
+            "ringe balken";
+        gap: 10px 28px;
+        align-items: center;
+        padding: 18px 24px;
+    }
+
+    .datum-leiste { grid-area: datum; }
+    .ringe { grid-area: ringe; margin: 0; }
+    .balken { grid-area: balken; }
+
+    .mahlzeiten {
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    }
+
+    /* Fenster in der Mitte statt unten */
+    .fenster {
+        max-width: 520px;
+        margin: auto;
+        border-bottom: 1px solid var(--rand);
+        border-radius: 22px;
+        padding: 22px;
+    }
+}
+
+
+/* ===== Online-Suche (Open Food Facts) ===== */
+.online { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+.online-knopf {
+    display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+    padding: 14px; border-radius: var(--radius, 16px); cursor: pointer;
+    background: transparent; color: var(--text, #fff);
+    border: 1px dashed var(--akzent, #86f7bd);
+}
+.online-knopf:hover, .online-knopf:focus-visible { background: rgba(134, 247, 189, 0.08); }
+.online-icon { font-size: 22px; flex: none; }
+.online-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.online-text strong { font-size: 15px; overflow-wrap: anywhere; }
+.online-text small { font-size: 12px; color: var(--text-grau); }
+.online-status, .online-quelle { margin: 4px 2px; font-size: 13px; color: var(--text-grau); }
+.online-status.fehler { color: var(--farbe-fehler); }
+.online-treffer { width: 100%; text-align: left; }
+
+/* ===== Barcode-Scanner ===== */
+.suche-scan {
+    flex: none; display: grid; place-items: center;
+    width: 36px; height: 36px; margin-right: -8px;
+    border: none; border-radius: 999px; background: transparent;
+    color: var(--akzent); cursor: pointer;
+}
+.suche-scan:hover, .suche-scan:focus-visible { background: rgba(134, 247, 189, 0.12); }
+.scan-kamera {
+    position: relative; overflow: hidden; border-radius: var(--radius);
+    background: #000; aspect-ratio: 4 / 3; margin-bottom: 12px;
+}
+.scan-kamera.aus { display: none; }
+.scan-kamera video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.scan-rahmen {
+    position: absolute; left: 12%; right: 12%; top: 30%; bottom: 30%;
+    border: 2px solid var(--akzent); border-radius: 12px;
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.35);
+}
+.scan-status { margin: 0 0 10px; font-size: 14px; color: var(--text-grau); }
+.scan-ergebnis { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.scan-zeile { display: flex; gap: 8px; margin-top: 6px; }
+.scan-zeile input { flex: 1; min-width: 0; }
+.scan-zeile .knopf-primaer { flex: none; }
+#scanNochmal { width: 100%; margin-top: 8px; }
+.scan-feld { display: block; font-size: 13px; color: var(--text-grau); }
