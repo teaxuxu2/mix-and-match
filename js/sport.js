@@ -200,6 +200,7 @@ function sessionNameVon(datum) {
 
 function sportSpeichern() {
     if (!speichern()) { zeigeMeldung(t("fehlerVoll"), true); return false; }
+    if (document.body.dataset.tab === "training") setTimeout(zeichneTraining, 0);
     return true;
 }
 
@@ -227,20 +228,125 @@ function zeichneSportTag() {
     const liste = sportVon(aktuellesDatum);
     const name = sessionNameVon(aktuellesDatum);
     const karte = el("section", "mahlzeit sport-karte");
+    const oben = el("div", "sport-karte-oben");
+    const text = el("div", "sport-karte-text");
     const kopf = el("div", "mahlzeit-kopf");
-    kopf.appendChild(el("h3", "", "🏋️ " + (name || t("sport"))));
-    if (liste.length) kopf.appendChild(el("span", "", sportTagText(liste)));
-    karte.appendChild(kopf);
+    kopf.appendChild(el("h3", "", "🏋️ " + t("sportSessions")));
+    text.appendChild(kopf);
+    text.appendChild(el("p", "sport-karte-name", liste.length ? (name || t("sport")) + " · " + sportTagText(liste) : t("sportLeer")));
+    oben.appendChild(text);
+    // Vorschaubild: erstes Übungsvideo der Session (liegt auf dem Gerät)
+    const mitVideo = liste.find(function (u) { return u.videoId; });
+    if (mitVideo) {
+        const bild = el("div", "sport-karte-bild");
+        const video = el("video");
+        video.muted = true; video.playsInline = true; video.preload = "metadata";
+        bild.appendChild(video);
+        oben.appendChild(bild);
+        videoLaden(mitVideo.videoId).then(function (blob) {
+            if (!blob) { bild.remove(); return; }
+            video.src = URL.createObjectURL(blob) + "#t=0.1";
+        }).catch(function () { bild.remove(); });
+    }
+    karte.appendChild(oben);
 
-    if (liste.length === 0) karte.appendChild(el("p", "leer klein", t("sportLeer")));
-    liste.forEach(function (u) {
-        karte.appendChild(uebungZeile(u, function () { oeffneUebung(u.id); }));
-    });
-    const mehr = el("button", "knopf-hinzu", liste.length ? t("sportOeffnen") : t("sportEintragen"));
-    mehr.type = "button";
-    mehr.addEventListener("click", oeffneSport);
-    karte.appendChild(mehr);
+    const uebungen = el("div", "sport-karte-liste");
+    liste.forEach(function (u) { uebungen.appendChild(uebungZeile(u, function () { oeffneUebung(u.id); })); });
+    karte.appendChild(uebungen);
+
+    const knoepfe = el("div", "sport-karte-knoepfe");
+    const oeffnen = el("button", "knopf-dunkel", liste.length ? t("sessionOeffnen") : t("sessionStarten"));
+    oeffnen.type = "button";
+    oeffnen.id = "sportKarteOeffnen";
+    oeffnen.addEventListener("click", oeffneSport);
+    knoepfe.appendChild(oeffnen);
+    const uebernehmen = el("button", "knopf-link", t("sessionUebernehmenKurz"));
+    uebernehmen.type = "button";
+    uebernehmen.addEventListener("click", function () { oeffneBloecke("session"); });
+    knoepfe.appendChild(uebernehmen);
+    karte.appendChild(knoepfe);
     box.appendChild(karte);
+}
+
+// =====================================================
+// Seite "Training": heute, letzte 7 Tage, gespeicherte Sessions, Übungen
+// =====================================================
+function zeichneTraining() {
+    const heute = $("trainingHeute");
+    if (!heute) return;
+    heute.innerHTML = "";
+    const liste = sportVon(aktuellesDatum);
+    const karte = el("button", "training-heute");
+    karte.type = "button";
+    karte.appendChild(el("span", "sport-icon", "🏋️"));
+    const info = el("span", "sport-info");
+    info.appendChild(el("strong", "", datumBeschriftung(aktuellesDatum) +
+        (sessionNameVon(aktuellesDatum) ? " · " + sessionNameVon(aktuellesDatum) : "")));
+    info.appendChild(el("small", "", liste.length ? sportTagText(liste) : t("sportLeer")));
+    karte.appendChild(info);
+    karte.appendChild(el("span", "knopf-icon klein", "›"));
+    karte.addEventListener("click", oeffneSport);
+    heute.appendChild(karte);
+
+    // Letzte 7 Tage
+    const woche = $("trainingWoche");
+    woche.innerHTML = "";
+    let tageMitSport = 0;
+    for (let i = 0; i < 7; i++) {
+        const datum = tageVerschieben(heuteAlsText(), -i);
+        const tag = sportVon(datum);
+        if (!tag.length) continue;
+        tageMitSport++;
+        const zeile = el("button", "sport-zeile");
+        zeile.type = "button";
+        zeile.appendChild(el("span", "sport-icon", "📅"));
+        const z = el("span", "sport-info");
+        z.appendChild(el("strong", "", datumBeschriftung(datum) + (sessionNameVon(datum) ? " · " + sessionNameVon(datum) : "")));
+        z.appendChild(el("small", "", sportTagText(tag) + " · " + tag.map(function (u) { return u.name; }).join(", ")));
+        zeile.appendChild(z);
+        zeile.addEventListener("click", function () {
+            aktuellesDatum = datum;
+            allesZeichnen();
+            oeffneSport();
+        });
+        woche.appendChild(zeile);
+    }
+    if (!tageMitSport) woche.appendChild(el("p", "leer klein", t("trainingWocheLeer")));
+
+    // Gespeicherte Sessions → in den gewählten Tag übernehmen
+    const sessions = $("trainingSessions");
+    sessions.innerHTML = "";
+    if (!daten.sport.pakete.length) sessions.appendChild(el("p", "leer klein", t("sessionsLeer")));
+    daten.sport.pakete.forEach(function (p) {
+        const zeile = el("button", "sport-zeile");
+        zeile.type = "button";
+        zeile.appendChild(el("span", "sport-icon", "📦"));
+        const z = el("span", "sport-info");
+        z.appendChild(el("strong", "", p.name));
+        z.appendChild(el("small", "", sportTagText(p.uebungen)));
+        zeile.appendChild(z);
+        zeile.appendChild(el("span", "knopf-icon klein", "＋"));
+        zeile.setAttribute("aria-label", t("sessionInTag", { name: p.name }));
+        zeile.addEventListener("click", function () {
+            uebungenUebernehmen(p.uebungen, p.name);
+            zeigeMeldung(anzahlText("trainingUebernommen", p.uebungen.length));
+            zeichneTraining();
+        });
+        sessions.appendChild(zeile);
+    });
+
+    // Meine Übungen (Bibliothek)
+    const bib = $("trainingUebungen");
+    bib.innerHTML = "";
+    if (!daten.sport.bloecke.length) bib.appendChild(el("p", "leer klein", t("bloeckeLeer")));
+    daten.sport.bloecke.slice().sort(function (a, b) { return a.name.localeCompare(b.name, gebietsschema()); })
+        .forEach(function (b) {
+            const zeile = el("div", "sport-eintrag");
+            const knopf = uebungZeile(b, function () {});
+            knopf.disabled = true;
+            zeile.appendChild(knopf);
+            bib.appendChild(zeile);
+        });
 }
 
 // =====================================================

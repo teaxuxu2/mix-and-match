@@ -85,7 +85,7 @@ function echteWolke() {
         },
         profil: function () {
             return Promise.all([bereit(), meineId()]).then(function (w) {
-                return w[0].from("profil").select("id, name, rolle").eq("id", w[1]).maybeSingle();
+                return w[0].from("profil").select("*").eq("id", w[1]).maybeSingle();
             }).then(pruefen);
         },
         nameSpeichern: function (name) {
@@ -199,6 +199,29 @@ function echteWolke() {
         eintragStatus: function (id, status) {
             return bereit().then(function (c) { return c.from("trainer_eintrag").update({ status: status }).eq("id", id); })
                 .then(pruefen);
+        },
+
+        // ---------- Gemeinsame Inhalte (für alle) ----------
+        // Lesen geht ohne Anmeldung und ohne Bibliothek – ein einfacher Abruf
+        gemeinsamLaden: function () {
+            if (!konfiguriert()) return Promise.resolve([]);
+            return fetch(WOLKE_KONFIG.url + "/rest/v1/gemeinsam?select=id,daten&geloescht=eq.false&order=geaendert", {
+                headers: { apikey: WOLKE_KONFIG.anonSchluessel, Authorization: "Bearer " + WOLKE_KONFIG.anonSchluessel }
+            }).then(function (antwort) {
+                if (antwort.status === 404) return []; // Tabelle noch nicht angelegt
+                if (!antwort.ok) throw new Error("HTTP " + antwort.status);
+                return antwort.json();
+            });
+        },
+        gemeinsamSpeichern: function (id, eintrag) {
+            return Promise.all([bereit(), meineId()]).then(function (w) {
+                return w[0].from("gemeinsam").upsert({ id: id, daten: eintrag, geloescht: false, geaendert: new Date().toISOString(), von: w[1] });
+            }).then(pruefen);
+        },
+        gemeinsamLoeschen: function (id) {
+            return bereit().then(function (c) {
+                return c.from("gemeinsam").update({ geloescht: true, geaendert: new Date().toISOString() }).eq("id", id);
+            }).then(pruefen);
         },
 
         // ---------- Videos ----------

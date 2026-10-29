@@ -33,46 +33,18 @@
 
 <body data-tab="plan">
 
-    <!-- ===== Kopfbereich: Logo + Buttons ===== -->
+    <!-- ===== Kopfbereich: Logo + Story-Kreise ("What I Eat in a Day") ===== -->
     <header class="kopf">
         <h1 class="logo">
             mix<span>&amp;</span>match
             <small>CALORIES</small>
         </h1>
-
-        <div class="kopf-aktionen">
-            <button type="button" class="knopf-primaer" id="knopfNeu">
-                <span aria-hidden="true">＋</span> <span data-t="neu">Add Food</span>
-            </button>
-            <button type="button" class="knopf-icon knopf-konto" id="knopfKonto" aria-label="Account" title="Account">👤</button>
-            <button type="button" class="knopf-icon" id="knopfEinstellungen" data-t-aria="einstellungen" aria-label="Settings">⋮</button>
-        </div>
+        <section class="creators" aria-labelledby="creatorsTitel">
+            <h2 id="creatorsTitel" class="creators-titel" data-t="creators">What I Eat in a Day</h2>
+            <p class="creators-unter" data-t="creatorsUnter">Recipes and ideas from your favorite people on Instagram and YouTube</p>
+            <div id="storyLeiste" class="story-leiste"></div>
+        </section>
     </header>
-
-    <!-- ===== Beschreibung + Sprachwahl ===== -->
-    <div class="intro">
-        <p class="beschreibung" data-t-html="beschreibung">
-            Mix your favorite foods into your perfect day –
-            <span>calories and protein</span> are calculated automatically.
-        </p>
-        <div class="sprachwahl" role="group" data-t-aria="sprachwahl" aria-label="Language">
-            <button type="button" data-sprache="en" lang="en">EN</button>
-            <button type="button" data-sprache="de" lang="de">DE</button>
-        </div>
-    </div>
-
-    <!-- ===== What I Eat in a Day: Story-Kreise der Menschen, die inspirieren ===== -->
-    <section class="creators" aria-labelledby="creatorsTitel">
-        <h2 id="creatorsTitel" class="creators-titel" data-t="creators">What I Eat in a Day</h2>
-        <p class="creators-unter" data-t="creatorsUnter">Recipes and ideas from your favorite people on Instagram and YouTube</p>
-        <div id="storyLeiste" class="story-leiste"></div>
-    </section>
-
-    <!-- ===== Umschalter fürs Handy: Tag oder Lebensmittel ===== -->
-    <nav class="tabs" aria-label="Sections">
-        <button type="button" class="tab" data-tab="plan" data-t="tabTag">My Day</button>
-        <button type="button" class="tab" data-tab="foods" data-t="tabFoods">Foods</button>
-    </nav>
 
     <main class="layout">
 
@@ -101,7 +73,45 @@
         <!-- ===== Bereich: Mein Tag ===== -->
         <section class="bereich bereich-plan">
 
-            <!-- Ganz oben: Lebensmittel suchen + mit einem Tipp eintragen, Scanner, Sport -->
+            <!-- Titel + Datum -->
+            <div class="tag-kopf">
+                <h2 class="tag-titel" data-t="tabTag">My Day</h2>
+                <div class="datum-leiste">
+                    <button type="button" class="knopf-pfeil" id="tagZurueck" data-t-aria="tagZurueck" aria-label="Previous day">‹</button>
+                    <button type="button" class="datum-text" id="datumText" data-t-title="zuHeute" title="Back to today">Today</button>
+                    <button type="button" class="knopf-pfeil" id="tagVor" data-t-aria="tagVor" aria-label="Next day">›</button>
+                </div>
+            </div>
+
+            <!-- Kennzahlen: kcal · Protein · Fett · KH mit Ziel-Balken -->
+            <div class="kpis" role="group" data-t-aria="kennzahlen" aria-label="Today's totals">
+                <div class="kpi" id="kpiKcal" style="--farbe: var(--farbe-kcal)">
+                    <span class="kpi-icon" aria-hidden="true">🔥</span>
+                    <strong id="kcalIst">0</strong><span class="kpi-einheit">kcal</span>
+                    <span class="kpi-spur"><i></i></span>
+                    <small id="kcalZiel">/ 2,200 kcal</small>
+                </div>
+                <div class="kpi" id="kpiProtein" style="--farbe: var(--farbe-protein)">
+                    <span class="kpi-icon" aria-hidden="true">💪</span>
+                    <strong id="proteinIst">0 g</strong><span class="kpi-einheit" data-t="protein">Protein</span>
+                    <span class="kpi-spur"><i></i></span>
+                    <small id="proteinZiel">/ 160 g</small>
+                </div>
+                <div class="kpi" id="kpiFett" style="--farbe: var(--farbe-fett)">
+                    <span class="kpi-icon" aria-hidden="true">💧</span>
+                    <strong id="fettIst">0 g</strong><span class="kpi-einheit" data-t="fett">Fat</span>
+                    <span class="kpi-spur"><i></i></span>
+                    <small id="fettZiel">/ 80 g</small>
+                </div>
+                <div class="kpi" id="kpiKh" style="--farbe: var(--farbe-kh)">
+                    <span class="kpi-icon" aria-hidden="true">🌾</span>
+                    <strong id="khIst">0 g</strong><span class="kpi-einheit" data-t="kpiKh">Carbs</span>
+                    <span class="kpi-spur"><i></i></span>
+                    <small id="khZiel">/ 250 g</small>
+                </div>
+            </div>
+
+            <!-- Suchen + mit einem Tipp eintragen, Scanner, Sport -->
             <div class="tag-oben">
                 <label class="suche tag-suche">
                     <span aria-hidden="true">🔍</span>
@@ -115,49 +125,71 @@
                 </button>
             </div>
             <div id="tagTreffer" class="tag-treffer liste kompakt" hidden></div>
-            <div id="schnellwahl" class="schnellwahl" role="group" data-t-aria="schnellwahl" aria-label="Quick add"></div>
-
-            <div class="zusammenfassung">
-                <div class="datum-leiste">
-                    <button type="button" class="knopf-pfeil" id="tagZurueck" data-t-aria="tagZurueck" aria-label="Previous day">‹</button>
-                    <button type="button" class="datum-text" id="datumText" data-t-title="zuHeute" title="Back to today">Today</button>
-                    <button type="button" class="knopf-pfeil" id="tagVor" data-t-aria="tagVor" aria-label="Next day">›</button>
-                </div>
-
-                <div class="ringe">
-                    <div class="ring" id="ringKcal">
-                        <svg viewBox="0 0 120 120" aria-hidden="true">
-                            <circle class="ring-hinten" cx="60" cy="60" r="52"></circle>
-                            <circle class="ring-wert" cx="60" cy="60" r="52"></circle>
-                        </svg>
-                        <div class="ring-text">
-                            <span class="ring-icon">🔥</span>
-                            <strong id="kcalIst">0</strong>
-                            <small id="kcalZiel">/ 2,200 kcal</small>
-                        </div>
-                    </div>
-
-                    <div class="ring" id="ringProtein">
-                        <svg viewBox="0 0 120 120" aria-hidden="true">
-                            <circle class="ring-hinten" cx="60" cy="60" r="52"></circle>
-                            <circle class="ring-wert" cx="60" cy="60" r="52"></circle>
-                        </svg>
-                        <div class="ring-text">
-                            <span class="ring-icon">💪</span>
-                            <strong id="proteinIst">0 g</strong>
-                            <small id="proteinZiel">/ 160 g Protein</small>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="balken" id="balken"></div>
+            <div class="schnell-chips">
+                <button type="button" class="chip" id="chipFavoriten" data-t="chipFavoriten">☆ Favorites</button>
+                <button type="button" class="chip" id="chipRezeptbuch" data-t="chipRezeptbuch">📖 Recipe book</button>
             </div>
+            <div id="schnellwahl" class="schnellwahl" role="group" data-t-aria="schnellwahl" aria-label="Quick add"></div>
 
             <div id="trainerVorschlaege" class="vorschlaege" hidden></div>
             <div id="mahlzeiten" class="mahlzeiten"></div>
             <div id="sportTag" class="sport-tag"></div>
         </section>
+
+        <!-- ===== Bereich: Training ===== -->
+        <section class="bereich bereich-training">
+            <h2 class="tag-titel" data-t="tabTraining">Training</h2>
+            <div id="trainingHeute"></div>
+            <h3 class="block-titel" data-t="trainingWoche">Last 7 days</h3>
+            <div id="trainingWoche" class="sport-liste"></div>
+            <h3 class="block-titel" data-t="trainingSessions">Saved sessions</h3>
+            <div id="trainingSessions" class="sport-liste"></div>
+            <h3 class="block-titel" data-t="trainingUebungen">My exercises</h3>
+            <div id="trainingUebungen" class="sport-liste"></div>
+        </section>
+
+        <!-- ===== Bereich: Profil ===== -->
+        <section class="bereich bereich-profil">
+            <h2 class="tag-titel" data-t="tabProfil">Profile</h2>
+            <div class="profil-liste">
+                <button type="button" class="profil-zeile" id="knopfKonto">
+                    <span class="sport-icon" aria-hidden="true">👤</span>
+                    <span class="sport-info"><strong data-t="kontoTitel">Account &amp; coach</strong><small id="profilKontoText"></small></span>
+                    <span class="knopf-icon klein" aria-hidden="true">›</span>
+                </button>
+                <button type="button" class="profil-zeile" id="knopfEinstellungen">
+                    <span class="sport-icon" aria-hidden="true">🎯</span>
+                    <span class="sport-info"><strong data-t="zieleUndSicherung">Daily goals &amp; backup</strong><small id="profilZieleText"></small></span>
+                    <span class="knopf-icon klein" aria-hidden="true">›</span>
+                </button>
+                <div class="profil-zeile">
+                    <span class="sport-icon" aria-hidden="true">🌐</span>
+                    <span class="sport-info"><strong data-t="sprache">Language</strong></span>
+                    <div class="sprachwahl" role="group" data-t-aria="sprachwahl" aria-label="Language">
+                        <button type="button" data-sprache="en" lang="en">EN</button>
+                        <button type="button" data-sprache="de" lang="de">DE</button>
+                    </div>
+                </div>
+                <div class="profil-zeile" id="profilAppZeile" hidden>
+                    <span class="sport-icon" aria-hidden="true">📲</span>
+                    <span class="sport-info"><strong data-t="appInstallieren">Save as app</strong><small data-t="appInstallierenText">iPhone: Share → “Add to Home Screen”. Android: menu ⋮ → “Install app”.</small></span>
+                </div>
+            </div>
+            <p class="beschreibung" data-t-html="beschreibung">
+                Mix your favorite foods into your perfect day –
+                <span>calories and protein</span> are calculated automatically.
+            </p>
+        </section>
     </main>
+
+    <!-- ===== Leiste unten: Tag · Lebensmittel · ＋ · Training · Profil ===== -->
+    <nav class="unten-nav" aria-label="Sections">
+        <button type="button" class="tab" data-tab="plan"><span class="nav-icon" aria-hidden="true">🏠</span><span class="nav-text" data-t="tabTag">My Day</span></button>
+        <button type="button" class="tab" data-tab="foods"><span class="nav-icon" aria-hidden="true">🥑</span><span class="nav-text" data-t="tabFoods">Foods</span></button>
+        <button type="button" class="nav-plus" id="knopfNeu" data-t-aria="neu" aria-label="Add"><span aria-hidden="true">＋</span></button>
+        <button type="button" class="tab" data-tab="training"><span class="nav-icon" aria-hidden="true">🏋️</span><span class="nav-text" data-t="tabTraining">Training</span></button>
+        <button type="button" class="tab" data-tab="profil"><span class="nav-icon" aria-hidden="true">👤</span><span class="nav-text" data-t="tabProfil">Profile</span><span class="nav-punkt" id="navKontoPunkt" hidden></span></button>
+    </nav>
 
     <!-- ===== Fenster: Lebensmittel anlegen / bearbeiten ===== -->
     <dialog id="dialogFormular" class="fenster">
@@ -218,6 +250,9 @@
                 </div>
 
             <p class="hinweis" data-t="hinweis">All values are optional.</p>
+            <label class="schalter gemeinsam-schalter" id="formGemeinsamBox" hidden>
+                <input type="checkbox" id="formGemeinsam"><span data-t="fuerAlle">🌍 Save for everyone in the app</span>
+            </label>
             <p class="fehler" id="formularFehler" role="alert"></p>
 
             <div class="fenster-aktionen">
@@ -421,6 +456,9 @@
 
             <h3 class="zwischentitel" data-t="anleitung">Instructions</h3>
             <textarea id="rezeptAnleitung" class="anleitung-feld" rows="7" data-t-ph="anleitungPlatzhalter"></textarea>
+            <label class="schalter gemeinsam-schalter" id="rezeptGemeinsamBox" hidden>
+                <input type="checkbox" id="rezeptGemeinsam"><span data-t="fuerAlle">🌍 Save for everyone in the app</span>
+            </label>
             <p class="fehler" id="rezeptFehler" role="alert"></p>
 
             <div class="fenster-aktionen">
@@ -547,6 +585,7 @@
 
     <script src="js/texte.js"></script>
     <script src="js/startdaten.js"></script>
+    <script src="js/gemeinsam.js"></script>
     <script src="js/influencer.js"></script>
     <script src="js/speicher.js"></script>
     <script src="js/online.js"></script>

@@ -8,7 +8,6 @@
 
 const MAHLZEITEN = ["fruehstueck", "mittag", "abend", "snack"]; // Text dazu: t("fruehstueck") ...
 
-const RING_UMFANG = 2 * Math.PI * 52; // Umfang der Ringe (Radius 52) = 326.73
 
 let daten = datenLaden();
 sprache = daten.einstellungen.sprache; // "en" oder "de" – Variable kommt aus texte.js
@@ -191,6 +190,21 @@ function allesZeichnen() {
     zeichneZusammenfassung();
     zeichnePlan();
     zeichneListe();
+    if (typeof zeichneTraining === "function") zeichneTraining();
+    zeichneProfil();
+}
+
+// Profil-Seite: kurze Infos unter den Einträgen
+function zeichneProfil() {
+    const z = daten.einstellungen;
+    $("profilZieleText").textContent = format(z.zielKcal) + " kcal · " + format(z.zielProtein) + " g " + t("protein");
+    const angemeldet = typeof wolkeIch !== "undefined" && wolkeIch;
+    $("profilKontoText").textContent = angemeldet ? t("kontoAngemeldet", { email: wolkeIch.email || "" }) : t("kontoNichtAngemeldet");
+    $("navKontoPunkt").hidden = !angemeldet;
+    // "Als App speichern" nur zeigen, wenn die Seite nicht schon als App geöffnet ist
+    let alsApp = false;
+    try { alsApp = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true; } catch (e) { alsApp = false; }
+    $("profilAppZeile").hidden = alsApp;
 }
 
 // Bild eines Lebensmittels: echtes Foto oder Emoji-Platzhalter
@@ -331,13 +345,14 @@ function zeichneListe() {
     }
 }
 
-function setzeRing(ringId, ist, ziel) {
-    const ring = $(ringId);
+// Eine Kennzahl oben: Wert, Ziel und dünner Balken (wie weit bin ich?)
+function setzeKennzahl(id, ist, ziel, istText, zielText) {
+    const kachel = $(id);
     const anteil = ziel > 0 ? ist / ziel : 0;
-    const kreis = ring.querySelector(".ring-wert");
-    kreis.style.strokeDashoffset = RING_UMFANG * (1 - Math.min(anteil, 1));
-    kreis.style.opacity = anteil > 0 ? 1 : 0; // bei 0 keinen Punkt zeigen
-    ring.classList.toggle("ueber", anteil > 1.05);
+    kachel.querySelector(".kpi-spur i").style.width = Math.min(anteil * 100, 100) + "%";
+    kachel.classList.toggle("ueber", anteil > 1.05);
+    kachel.setAttribute("title", Math.round(anteil * 100) + "%");
+    return { ist: istText, ziel: zielText };
 }
 
 function zeichneZusammenfassung() {
@@ -349,41 +364,15 @@ function zeichneZusammenfassung() {
     $("kcalIst").textContent = format(s.kcal);
     $("kcalZiel").textContent = "/ " + format(z.zielKcal) + " kcal";
     $("proteinIst").textContent = format(s.protein) + " g";
-    $("proteinZiel").textContent = "/ " + format(z.zielProtein) + " " + t("ringProtein");
-    setzeRing("ringKcal", s.kcal, z.zielKcal);
-    setzeRing("ringProtein", s.protein, z.zielProtein);
-
-    const zeilen = [
-        { icon: "🔥", ist: s.kcal, ziel: z.zielKcal, einheit: t("balkenKcal"), farbe: "var(--farbe-kcal)" },
-        { icon: "💪", ist: s.protein, ziel: z.zielProtein, einheit: t("balkenProtein"), farbe: "var(--farbe-protein)" },
-        { icon: "🌾", ist: s.kh, ziel: z.zielKh, einheit: t("balkenKh"), farbe: "var(--farbe-kh)" },
-        { icon: "💧", ist: s.fett, ziel: z.zielFett, einheit: t("balkenFett"), farbe: "var(--farbe-fett)" }
-    ];
-
-    const balken = $("balken");
-    balken.innerHTML = "";
-    zeilen.forEach(function (zeile) {
-        const prozent = zeile.ziel > 0 ? Math.round(zeile.ist / zeile.ziel * 100) : 0;
-        const reihe = el("div", "balken-zeile");
-        reihe.appendChild(el("span", "", zeile.icon));
-
-        const mitte = el("div");
-        const text = el("div", "balken-beschriftung");
-        text.appendChild(el("b", "", format(zeile.ist)));
-        text.appendChild(document.createTextNode(" / " + format(zeile.ziel) + zeile.einheit));
-        mitte.appendChild(text);
-
-        const spur = el("div", "balken-spur");
-        const fuellung = el("div", "balken-fuellung");
-        fuellung.style.width = Math.min(prozent, 100) + "%";
-        fuellung.style.background = zeile.farbe;
-        spur.appendChild(fuellung);
-        mitte.appendChild(spur);
-        reihe.appendChild(mitte);
-
-        reihe.appendChild(el("span", "balken-prozent", prozent + "%"));
-        balken.appendChild(reihe);
-    });
+    $("proteinZiel").textContent = "/ " + format(z.zielProtein) + " g";
+    $("fettIst").textContent = format(s.fett) + " g";
+    $("fettZiel").textContent = "/ " + format(z.zielFett) + " g";
+    $("khIst").textContent = format(s.kh) + " g";
+    $("khZiel").textContent = "/ " + format(z.zielKh) + " g";
+    setzeKennzahl("kpiKcal", s.kcal, z.zielKcal);
+    setzeKennzahl("kpiProtein", s.protein, z.zielProtein);
+    setzeKennzahl("kpiFett", s.fett, z.zielFett);
+    setzeKennzahl("kpiKh", s.kh, z.zielKh);
 }
 
 // Ein Eintrag im Tagesplan: Bild, Name, Werte, − Menge +, ✕
@@ -785,6 +774,7 @@ function lebensmittelLoeschen() {
         if (daten.plan[datum].length === 0) delete daten.plan[datum];
     });
     daten.lebensmittel = daten.lebensmittel.filter(function (x) { return x.id !== lm.id; });
+    if (istAdmin() && lm.id.indexOf("g-") === 0) gemeinsamEntfernen(lm.id); // Admin: für alle löschen
 
     speichern();
     schliesseFenster("dialogAktionen");
@@ -816,6 +806,7 @@ function oeffneFormular(id, vorgabeName) {
 
     setzeFormularFoto(lm ? lm.foto : null);
     $("fotoInput").value = "";
+    gemeinsamSchalterSetzen("formGemeinsamBox", "formGemeinsam", lm);
 
     oeffneFenster("dialogFormular");
     if (!lm && window.matchMedia("(min-width: 900px)").matches) $("eingabeName").focus();
@@ -947,6 +938,8 @@ function formularSpeichern() {
 
     if (!bearbeiteId && nachFormularSpeichern) nachFormularSpeichern(lm);
     nachFormularSpeichern = null;
+    // Admin: auch für alle in der App speichern
+    if (istAdmin() && $("formGemeinsam").checked) gemeinsamTeilen(lm);
 }
 
 
@@ -1017,6 +1010,7 @@ function oeffneRezept(id) {
     $("rezeptFehler").textContent = "";
     setzeRezeptFoto(lm ? lm.foto : null);
     $("rezeptFotoInput").value = "";
+    gemeinsamSchalterSetzen("rezeptGemeinsamBox", "rezeptGemeinsam", lm);
     zeichneRezept();
     oeffneFenster("dialogRezept");
 }
@@ -1434,6 +1428,7 @@ function rezeptSpeichern() {
     rezeptEntwurf = null;
     allesZeichnen();
     zeigeMeldung(t("rezeptGespeichert", { name: name }));
+    if (istAdmin() && $("rezeptGemeinsam").checked) gemeinsamTeilen(lm);
 }
 
 
@@ -1500,7 +1495,19 @@ function sicherungEinlesen(datei) {
 
 function tabWechseln(tab) {
     document.body.dataset.tab = tab;
+    if (tab === "training" && typeof zeichneTraining === "function") zeichneTraining();
+    if (tab === "profil") zeichneProfil();
     window.scrollTo(0, 0);
+}
+
+// Lebensmittel-Seite mit einem bestimmten Filter öffnen (Favoriten, Rezeptbuch)
+function lebensmittelMitFilter(neuerFilter) {
+    filter = neuerFilter;
+    document.querySelectorAll(".chip[data-filter]").forEach(function (c) {
+        c.classList.toggle("aktiv", c.dataset.filter === neuerFilter);
+    });
+    zeichneListe();
+    tabWechseln("foods");
 }
 
 function verbinden() {
@@ -1508,6 +1515,9 @@ function verbinden() {
     document.querySelectorAll(".tab").forEach(function (knopf) {
         knopf.addEventListener("click", function () { tabWechseln(knopf.dataset.tab); });
     });
+
+    $("chipFavoriten").addEventListener("click", function () { lebensmittelMitFilter("favoriten"); });
+    $("chipRezeptbuch").addEventListener("click", function () { lebensmittelMitFilter("rezepte"); });
 
     // Sprache
     document.querySelectorAll(".sprachwahl button").forEach(function (knopf) {
@@ -1677,6 +1687,12 @@ function verbinden() {
 // ---------- Start ----------
 rezepteNeuBerechnen(); // falls sich Werte von Zutaten geändert haben (z. B. Datenbank-Korrektur)
 verbinden();
+gemeinsamAktualisieren(); // neue Lebensmittel/Rezepte "für alle" holen
+
+// Als Web-App: Notvorrat anlegen, damit sie auch offline startet (nicht in automatischen Tests)
+if ("serviceWorker" in navigator && location.protocol === "https:" && !navigator.webdriver) {
+    navigator.serviceWorker.register("sw.js").catch(function () { /* egal */ });
+}
 allesZeichnen();
 
 if (daten.alteUebernommen) {

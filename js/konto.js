@@ -15,6 +15,7 @@
 
 let wolkeIch = null;            // angemeldete Person { id, email } oder null
 let wolkeName = "";
+let wolkeAdmin = false;          // darf Inhalte "für alle" speichern
 let wolkeBeimEinspielen = false; // während Daten aus der Wolke übernommen werden: nicht gleich wieder hochladen
 let wolkeTimer = null;
 let wolkeModus = "anmelden";    // im Konto-Fenster: "anmelden" oder "registrieren"
@@ -85,7 +86,11 @@ function wolkeAbgleichen() {
     if (!wolkeIch) return Promise.resolve();
     return wolke.eigeneLaden().then(function (oben) {
         const obenStand = Math.max(oben.sport && oben.sport.stand || 0, oben.essen && oben.essen.stand || 0);
-        if (obenStand > lokalerStand() && oben.essen && oben.essen.kompakt) {
+        // Neues Gerät ohne eigene Einträge? Dann immer die Daten aus der Wolke nehmen.
+        const lokalLeer = !Object.keys(daten.plan).some(function (d) { return daten.plan[d].length; }) &&
+            !daten.lebensmittel.some(function (lm) { return lm.eigenes; }) &&
+            !Object.keys(daten.sport.tage).length && !daten.sport.pakete.length;
+        if ((obenStand > lokalerStand() || lokalLeer) && oben.essen && oben.essen.kompakt) {
             wolkeBeimEinspielen = true;
             const neu = migrieren(vonKompakt(oben.essen.kompakt));
             const sport = Object.assign({}, oben.sport || {});
@@ -268,7 +273,7 @@ function zeichneKonto() {
     }
 
     // ---------- angemeldet ----------
-    box.appendChild(el("p", "unterzeile", t("kontoAngemeldet", { email: wolkeIch.email || "" })));
+    box.appendChild(el("p", "unterzeile", t("kontoAngemeldet", { email: wolkeIch.email || "" }) + (wolkeAdmin ? " · 🌍 Admin" : "")));
     const sync = el("p", "konto-sync");
     sync.id = "kontoSync";
     box.appendChild(sync);
@@ -333,7 +338,7 @@ function zeichneKonto() {
     ab.id = "kontoAbmelden";
     ab.addEventListener("click", function () {
         wolke.abmelden().then(function () {
-            wolkeIch = null; trainerVorschlaege = [];
+            wolkeIch = null; wolkeAdmin = false; trainerVorschlaege = [];
             zeichneKonto(); zeichnePlan(); zeichneKontoKnopf();
         });
     });
@@ -450,11 +455,7 @@ function zeichneMeineSportler() {
 
 // Kopf-Knopf zeigt, ob man angemeldet ist
 function zeichneKontoKnopf() {
-    const knopf = $("knopfKonto");
-    if (!knopf) return;
-    knopf.classList.toggle("angemeldet", !!wolkeIch);
-    knopf.setAttribute("aria-label", wolkeIch ? t("kontoAngemeldetKurz") : t("kontoTitel"));
-    knopf.title = knopf.getAttribute("aria-label");
+    if (typeof zeichneProfil === "function" && $("profilKontoText")) zeichneProfil();
 }
 
 // =====================================================
@@ -643,7 +644,7 @@ function wolkeStarten() {
         wolkeIch = u ? { id: u.id, email: u.email } : null;
         zeichneKontoKnopf();
         if (!wolkeIch) return;
-        return wolke.profil().then(function (p) { wolkeName = p ? p.name : ""; }).catch(function () {})
+        return wolke.profil().then(function (p) { wolkeName = p ? p.name : ""; wolkeAdmin = !!(p && p.admin); }).catch(function () {})
             .then(wolkeAbgleichen)
             .then(trainerPostHolen);
     }).catch(function () { /* offline */ });
