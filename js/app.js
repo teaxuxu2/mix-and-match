@@ -195,7 +195,11 @@ function allesZeichnen() {
 }
 
 // Profil-Seite: kurze Infos unter den Einträgen
+// Sichtbare Versionsnummer (Profil ganz unten) – so sieht man, ob die neue Version da ist
+const APP_VERSION = "3.6";
+
 function zeichneProfil() {
+    $("appVersion").textContent = t("appVersion", { nr: APP_VERSION });
     const z = daten.einstellungen;
     $("profilZieleText").textContent = format(z.zielKcal) + " kcal · " + format(z.zielProtein) + " g " + t("protein");
     const angemeldet = typeof wolkeIch !== "undefined" && wolkeIch;

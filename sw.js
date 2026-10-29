@@ -2,7 +2,7 @@
    Sorgt dafür, dass die App auch ohne Internet startet (z. B. im Fitnessstudio-Keller).
    Regel: immer zuerst das Neueste aus dem Netz holen; nur wenn das nicht klappt, die gespeicherte Kopie.
    Wohnhaus-Bild: ein Notvorrat im Keller – benutzt wird er nur, wenn der Laden zu hat. */
-const VORRAT = "mmc-vorrat-v8";
+const VORRAT = "mmc-vorrat-v9";
 const DATEIEN = [
     "./", "./index.html", "./manifest.webmanifest", "./css/style.css",
     "./js/texte.js", "./js/startdaten.js", "./js/gemeinsam.js", "./js/influencer.js", "./js/speicher.js",

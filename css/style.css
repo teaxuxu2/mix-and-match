@@ -1964,3 +1964,6 @@ input, select, textarea, .menge-wert input { font-size: 16px !important; }
 .treffer-zeile { display: flex; align-items: center; gap: 4px; }
 .treffer-zeile > .lm-karte { flex: 1; min-width: 0; }
 .schnell-plus-direkt { flex: none; width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--akzent); background: transparent; color: var(--akzent); font-size: 20px; }
+
+/* Versionsnummer im Profil */
+.app-version { text-align: center; font-size: 12px; color: var(--text-grau); margin: 8px 0 0; }
