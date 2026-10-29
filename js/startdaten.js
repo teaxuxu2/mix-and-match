@@ -691,7 +691,57 @@ const STARTDATEN = [
     { id: "off-9008695949520", seit: 8, emoji: "🫛", de: "Iglo Ganze Fisolen", en: "Iglo Whole Green Beans", marke: "Iglo", kcal100: 31, protein100: 2, kh100: 4.3, fett100: 0.2, quelle: "openfoodfacts:9008695949520" },
     { id: "off-9000143145423", seit: 8, emoji: "🥬", de: "Iglo Kohlsprossen", en: "Iglo Brussels Sprouts", marke: "Iglo", kcal100: 45, protein100: 3.5, kh100: 2.7, fett100: 1.3, quelle: "openfoodfacts:9000143145423" },
     { id: "off-9100000066189", seit: 8, emoji: "🥬", de: "Spar Natur*pur Blattspinat-Minis", en: "Spar Natur*pur Leaf Spinach Minis", marke: "Spar Natur*pur", laden: "Spar", kcal100: 26, protein100: 3.1, kh100: 0.5, fett100: 0.8, quelle: "openfoodfacts:9100000066189" },
-    { id: "off-4099200105291", seit: 8, emoji: "🥦", de: "Nature's Gold Pfannengemüse", en: "Nature's Gold Pan Vegetables", marke: "Nature's Gold", laden: "Hofer", kcal100: 76, protein100: 2.6, kh100: 7.3, fett100: 3.4, quelle: "openfoodfacts:4099200105291" }
+    { id: "off-4099200105291", seit: 8, emoji: "🥦", de: "Nature's Gold Pfannengemüse", en: "Nature's Gold Pan Vegetables", marke: "Nature's Gold", laden: "Hofer", kcal100: 76, protein100: 2.6, kh100: 7.3, fett100: 3.4, quelle: "openfoodfacts:4099200105291" },
+
+    // ===== Version 9: Carnivore – Speck, Fleisch, Innereien, Fette, Fisch (Wunsch Ivy) =====
+    // quelle "usda" = USDA FoodData Central, "durchschnitt" = typische Packungs-/Tabellenwerte (gerundet).
+    { id: "carn-bacon-raw", seit: 9, emoji: "🥓", de: "Frühstücksspeck / Bacon (roh)", en: "Bacon (raw)", kcal100: 417, protein100: 12.6, kh100: 1.3, fett100: 39.7, quelle: "usda" },
+    { id: "carn-bacon-crispy", seit: 9, emoji: "🥓", de: "Bacon knusprig gebraten", en: "Bacon (pan-fried, crispy)", kcal100: 541, protein100: 37, kh100: 1.4, fett100: 41.8, quelle: "usda" },
+    { id: "carn-bauchspeck", seit: 9, emoji: "🥓", de: "Bauchspeck geräuchert", en: "Smoked Pork Belly Bacon", kcal100: 450, protein100: 15, kh100: 0.5, fett100: 43, quelle: "durchschnitt" },
+    { id: "carn-tiroler-speck", seit: 9, emoji: "🥓", de: "Tiroler Speck / Schinkenspeck", en: "Tyrolean Speck (smoked ham)", kcal100: 320, protein100: 29, kh100: 0.5, fett100: 22.5, quelle: "durchschnitt" },
+    { id: "carn-lardo", seit: 9, emoji: "🥓", de: "Rückenspeck / Lardo", en: "Pork Back Fat / Lardo", kcal100: 812, protein100: 2.9, kh100: 0, fett100: 88.7, quelle: "usda" },
+    { id: "carn-grammeln", seit: 9, emoji: "🥓", de: "Grammeln (Grieben)", en: "Pork Cracklings (Grammeln)", kcal100: 640, protein100: 30, kh100: 0, fett100: 58, quelle: "durchschnitt" },
+    { id: "carn-pork-rinds", seit: 9, emoji: "🥓", de: "Schweineschwarte / Chicharrón (Snack)", en: "Pork Rinds (snack)", kcal100: 544, protein100: 61.3, kh100: 0, fett100: 31.3, quelle: "usda" },
+    { id: "carn-schweinebauch", seit: 9, emoji: "🥩", de: "Schweinebauch (roh)", en: "Pork Belly (raw)", kcal100: 518, protein100: 9.3, kh100: 0, fett100: 53, quelle: "usda" },
+    { id: "carn-schweinekotelett", seit: 9, emoji: "🥩", de: "Schweinskotelett (roh)", en: "Pork Chop (raw)", kcal100: 160, protein100: 21, kh100: 0, fett100: 8.5, quelle: "durchschnitt" },
+    { id: "carn-schweinsschulter", seit: 9, emoji: "🥩", de: "Schweinsschulter (roh)", en: "Pork Shoulder (raw)", kcal100: 200, protein100: 18, kh100: 0, fett100: 14, quelle: "durchschnitt" },
+    { id: "carn-ribeye", seit: 9, emoji: "🥩", de: "Ribeye / Entrecôte (roh)", en: "Ribeye Steak (raw)", kcal100: 220, protein100: 20, kh100: 0, fett100: 15.5, quelle: "durchschnitt" },
+    { id: "carn-rinderfilet", seit: 9, emoji: "🥩", de: "Rinderfilet (roh)", en: "Beef Tenderloin (raw)", kcal100: 121, protein100: 21, kh100: 0, fett100: 4, quelle: "durchschnitt" },
+    { id: "carn-rumpsteak", seit: 9, emoji: "🥩", de: "Rumpsteak / Hüftsteak (roh)", en: "Rump / Sirloin Steak (raw)", kcal100: 145, protein100: 21.5, kh100: 0, fett100: 6.5, quelle: "durchschnitt" },
+    { id: "carn-rinderbrust", seit: 9, emoji: "🥩", de: "Rinderbrust / Brisket (roh)", en: "Beef Brisket (raw)", kcal100: 250, protein100: 18, kh100: 0, fett100: 20, quelle: "durchschnitt" },
+    { id: "carn-rinderleber", seit: 9, emoji: "🫀", de: "Rinderleber (roh)", en: "Beef Liver (raw)", kcal100: 135, protein100: 20.4, kh100: 3.9, fett100: 3.6, quelle: "usda" },
+    { id: "carn-rinderherz", seit: 9, emoji: "🫀", de: "Rinderherz (roh)", en: "Beef Heart (raw)", kcal100: 112, protein100: 17.7, kh100: 0.1, fett100: 3.9, quelle: "usda" },
+    { id: "carn-rinderzunge", seit: 9, emoji: "👅", de: "Rinderzunge (roh)", en: "Beef Tongue (raw)", kcal100: 224, protein100: 14.9, kh100: 3.7, fett100: 16.1, quelle: "usda" },
+    { id: "carn-rinderniere", seit: 9, emoji: "🫘", de: "Rinderniere (roh)", en: "Beef Kidney (raw)", kcal100: 99, protein100: 17.4, kh100: 0.3, fett100: 3.1, quelle: "usda" },
+    { id: "carn-knochenmark", seit: 9, emoji: "🦴", de: "Knochenmark (Rind)", en: "Beef Bone Marrow", kcal100: 786, protein100: 6.7, kh100: 0, fett100: 84.4, quelle: "usda" },
+    { id: "carn-knochenbruehe", seit: 9, emoji: "🍲", de: "Knochenbrühe (Rind)", en: "Beef Bone Broth", kcal100: 20, protein100: 4, kh100: 0.3, fett100: 0.4, quelle: "durchschnitt" },
+    { id: "carn-rindertalg", seit: 9, emoji: "🧈", de: "Rindertalg", en: "Beef Tallow", kcal100: 902, protein100: 0, kh100: 0, fett100: 100, quelle: "usda" },
+    { id: "carn-schmalz", seit: 9, emoji: "🧈", de: "Schweineschmalz", en: "Lard", kcal100: 902, protein100: 0, kh100: 0, fett100: 100, quelle: "usda" },
+    { id: "carn-gaenseschmalz", seit: 9, emoji: "🧈", de: "Gänseschmalz", en: "Goose Fat", kcal100: 900, protein100: 0, kh100: 0, fett100: 99.8, quelle: "usda" },
+    { id: "carn-ghee", seit: 9, emoji: "🧈", de: "Ghee / Butterschmalz", en: "Ghee / Clarified Butter", kcal100: 876, protein100: 0.3, kh100: 0, fett100: 99.5, quelle: "usda" },
+    { id: "carn-lamm", seit: 9, emoji: "🐑", de: "Lammfleisch (roh)", en: "Lamb (raw)", kcal100: 282, protein100: 16.6, kh100: 0, fett100: 23.4, quelle: "usda" },
+    { id: "carn-hirsch", seit: 9, emoji: "🦌", de: "Hirsch / Reh (roh)", en: "Venison (raw)", kcal100: 120, protein100: 23, kh100: 0, fett100: 2.4, quelle: "usda" },
+    { id: "carn-ente", seit: 9, emoji: "🦆", de: "Ente mit Haut (roh)", en: "Duck with Skin (raw)", kcal100: 404, protein100: 11.5, kh100: 0, fett100: 39.3, quelle: "usda" },
+    { id: "carn-huehnerschenkel-haut", seit: 9, emoji: "🍗", de: "Hühnerschenkel mit Haut (roh)", en: "Chicken Thigh with Skin (raw)", kcal100: 221, protein100: 16.5, kh100: 0, fett100: 16.6, quelle: "usda" },
+    { id: "carn-chicken-wings", seit: 9, emoji: "🍗", de: "Hühnerflügerl (roh)", en: "Chicken Wings (raw)", kcal100: 203, protein100: 18.3, kh100: 0, fett100: 14, quelle: "usda" },
+    { id: "carn-huehnerherzen", seit: 9, emoji: "🫀", de: "Hühnerherzen (roh)", en: "Chicken Hearts (raw)", kcal100: 153, protein100: 15.6, kh100: 0.7, fett100: 9.3, quelle: "usda" },
+    { id: "carn-huehnerleber", seit: 9, emoji: "🫀", de: "Hühnerleber (roh)", en: "Chicken Liver (raw)", kcal100: 119, protein100: 16.9, kh100: 0.7, fett100: 4.8, quelle: "usda" },
+    { id: "carn-sardinen", seit: 9, emoji: "🐟", de: "Sardinen in Öl (abgetropft)", en: "Sardines in Oil (drained)", kcal100: 208, protein100: 24.6, kh100: 0, fett100: 11.5, quelle: "usda" },
+    { id: "carn-makrele", seit: 9, emoji: "🐟", de: "Makrele (roh)", en: "Mackerel (raw)", kcal100: 205, protein100: 18.6, kh100: 0, fett100: 13.9, quelle: "usda" },
+    { id: "carn-hering", seit: 9, emoji: "🐟", de: "Hering (roh)", en: "Herring (raw)", kcal100: 158, protein100: 18, kh100: 0, fett100: 9, quelle: "usda" },
+    { id: "carn-forelle", seit: 9, emoji: "🐟", de: "Forelle (roh)", en: "Trout (raw)", kcal100: 141, protein100: 19.9, kh100: 0, fett100: 6.2, quelle: "usda" },
+    { id: "carn-muscheln", seit: 9, emoji: "🦪", de: "Miesmuscheln (roh)", en: "Mussels (raw)", kcal100: 86, protein100: 11.9, kh100: 3.7, fett100: 2.2, quelle: "usda" },
+    { id: "carn-kaviar", seit: 9, emoji: "🐟", de: "Fischrogen / Kaviar", en: "Fish Roe / Caviar", kcal100: 264, protein100: 24.6, kh100: 4, fett100: 17.9, quelle: "usda" },
+    { id: "carn-eigelb", seit: 9, emoji: "🥚", de: "Eigelb", en: "Egg Yolk", kcal100: 322, protein100: 15.9, kh100: 3.6, fett100: 26.5, quelle: "usda" },
+    { id: "carn-schlagobers", seit: 9, emoji: "🥛", de: "Schlagobers / Sahne 36 %", en: "Heavy Cream 36%", kcal100: 345, protein100: 2.1, kh100: 2.9, fett100: 36, quelle: "durchschnitt" },
+    { id: "carn-bergkaese", seit: 9, emoji: "🧀", de: "Bergkäse", en: "Mountain Cheese", kcal100: 400, protein100: 28, kh100: 0, fett100: 32, quelle: "durchschnitt" },
+    { id: "carn-camembert", seit: 9, emoji: "🧀", de: "Camembert", en: "Camembert", kcal100: 300, protein100: 19.8, kh100: 0.5, fett100: 24.3, quelle: "usda" },
+    { id: "carn-salami", seit: 9, emoji: "🍖", de: "Salami", en: "Salami", kcal100: 406, protein100: 24, kh100: 1, fett100: 34, quelle: "durchschnitt" },
+    { id: "carn-rohschinken", seit: 9, emoji: "🥓", de: "Rohschinken / Prosciutto", en: "Prosciutto / Cured Ham", kcal100: 248, protein100: 26, kh100: 0, fett100: 16, quelle: "durchschnitt" },
+    { id: "carn-leberkaese", seit: 9, emoji: "🍖", de: "Leberkäse", en: "Leberkäse (meatloaf)", kcal100: 290, protein100: 12, kh100: 1, fett100: 26.5, quelle: "durchschnitt" },
+    { id: "carn-leberwurst", seit: 9, emoji: "🍖", de: "Leberwurst", en: "Liver Sausage", kcal100: 325, protein100: 15, kh100: 1, fett100: 29, quelle: "durchschnitt" },
+    { id: "carn-gelatine", seit: 9, emoji: "🍮", de: "Gelatine (Pulver)", en: "Gelatin (powder)", kcal100: 335, protein100: 85.6, kh100: 0, fett100: 0.1, quelle: "usda" },
+    { id: "carn-kollagen", seit: 9, emoji: "💪", de: "Kollagenpulver", en: "Collagen Powder", kcal100: 360, protein100: 90, kh100: 0, fett100: 0, quelle: "durchschnitt" }
 ];
 
 // Wie viel wiegt EIN Stück bzw. eine Scheibe? (Durchschnitt, essbarer Anteil; Basis USDA "medium"/Packungsangaben)
@@ -704,7 +754,8 @@ const STUECK_GEWICHTE = {
     "usda-nectarine": [142, "stueck"], "usda-plum": [40, "stueck"],
     "start-ricecake": [8, "scheibe"], "start-bread": [50, "scheibe"], "usda-toast": [25, "scheibe"],
     "usda-crispbread": [10, "scheibe"], "usda-kaisersemmel": [55, "stueck"],
-    "start-wrap": [60, "stueck"], "start-proteinbar": [50, "stueck"]
+    "start-wrap": [60, "stueck"], "start-proteinbar": [50, "stueck"],
+    "carn-eigelb": [17, "stueck"], "carn-bacon-crispy": [8, "scheibe"], "carn-bacon-raw": [15, "scheibe"]
 };
 STARTDATEN.forEach(function (eintrag) {
     const s = STUECK_GEWICHTE[eintrag.id];
