@@ -1845,7 +1845,8 @@ body[data-tab="profil"] .tab[data-tab="profil"] .nav-icon { filter: none; }
 
 /* ===== iPhone: nichts oben abschneiden ===== */
 /* Als Web-App (Home-Bildschirm) liegt die Statusleiste über der Seite → Platz lassen */
-body { padding-top: max(16px, env(safe-area-inset-top)); }
+/* Version 3.3: weniger Rand – der Bereich unter der Statusleiste ist großzügig, 10 px davon dürfen wir nutzen */
+body { padding-top: max(10px, calc(env(safe-area-inset-top) - 10px)); }
 /* Fenster nie höher als der sichtbare Bereich (auch wenn die Tastatur offen ist) */
 .fenster {
     max-height: calc(var(--sichtbar, 100dvh) - env(safe-area-inset-top) - 12px);
@@ -1854,3 +1855,29 @@ body { padding-top: max(16px, env(safe-area-inset-top)); }
 /* Trefferliste der Suche: eigene Scrollfläche statt die ganze Seite zu verschieben */
 .tag-treffer { max-height: 52vh; overflow-y: auto; overscroll-behavior: contain; }
 html { -webkit-text-size-adjust: 100%; }
+
+/* ===== Version 3.3 ===== */
+/* Menge: − 70 + und daneben direkt g | Stk. umschalten */
+.menge-zeile { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.menge-zeile .menge-steuerung { margin-top: 0; }
+.einheit-wahl {
+    display: inline-flex; padding: 3px; gap: 2px;
+    background: var(--eingabe); border: 1px solid var(--rand); border-radius: 999px;
+}
+.einheit-option {
+    min-width: 40px; height: 32px; padding: 0 10px;
+    border: none; border-radius: 999px; background: transparent;
+    color: var(--text-grau); font-size: 14px; font-weight: 600;
+}
+.einheit-option.aktiv { background: var(--akzent); color: #06281a; }
+.online-nochmal { margin-top: 6px; }
+.online-status.laedt::before {
+    content: ""; display: inline-block; width: 12px; height: 12px; margin-right: 8px; vertical-align: -1px;
+    border: 2px solid var(--rand); border-top-color: var(--akzent); border-radius: 50%;
+    animation: online-dreh 0.8s linear infinite;
+}
+@keyframes online-dreh { to { transform: rotate(360deg); } }
+
+/* Kein Hineinzoomen: kein Doppeltipp-Zoom, Eingabefelder mind. 16 px (sonst zoomt das iPhone beim Antippen) */
+html, body { touch-action: manipulation; }
+input, select, textarea, .menge-wert input { font-size: 16px !important; }

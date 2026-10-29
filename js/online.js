@@ -61,12 +61,14 @@ function offProduktLesen(p) {
         p.product_name_de || p.product_name_en || "").trim();
     if (!name || !p.code) return null;
 
-    const marken = Array.isArray(p.brands) ? p.brands : String(p.brands || "").split(",");
+    const marken = (Array.isArray(p.brands) ? p.brands : String(p.brands || "").split(","))
+        .map(function (m) { return String(m || "").trim(); }).filter(Boolean);
     function wert(v) { return typeof v === "number" && v >= 0 && v <= 100 ? auf1Stelle(v) : 0; }
     return {
         code: String(p.code),
         name: name.slice(0, 80),
-        marke: String(marken[0] || "").trim().slice(0, 40),
+        marke: (marken[0] || "").slice(0, 40),
+        alleMarken: marken.join(" "),
         kcal100: Math.round(kcal),
         protein100: wert(n.proteins_100g),
         kh100: wert(n.carbohydrates_100g),
@@ -75,70 +77,163 @@ function offProduktLesen(p) {
     };
 }
 
-// Sucht online. Ergebnis: Promise mit einer Liste einfacher Produkte (Österreich zuerst)
+// Andere Wörter, unter denen Open Food Facts dasselbe kennt
+// (z. B. heißt die Marke "More" dort "More Nutrition", Proteinpulver oft "Whey Protein")
+const ONLINE_SYNONYME = [
+    [/\bmore ?fit\b/, "more nutrition"],
+    [/\bmore\b(?! nutrition)/, "more nutrition"],
+    [/\b(protein ?pulver|eiweiss ?pulver|eiweiß ?pulver)\b/, "whey protein"],
+    [/\bcevap\w*|\bcevape\b|\bćevap\w*/, "cevapcici"],
+    [/\bdoner\b|\bdöner\b|\bdoener\b/, "kebab"]
+];
+
+// Ein Promise, das mit dem ersten NICHT-leeren Ergebnis fertig wird (sonst Fehler)
+function erstesMitTreffern(versuche) {
+    return new Promise(function (fertig, fehler) {
+        let offen = versuche.length;
+        let letzterFehler = null;
+        if (!offen) { fehler(new Error("leer")); return; }
+        versuche.forEach(function (v) {
+            v.then(function (liste) {
+                if (Array.isArray(liste) && liste.length) fertig(liste);
+                else if (--offen === 0) letzterFehler ? fehler(letzterFehler) : fertig([]);
+            }, function (f) {
+                letzterFehler = f;
+                if (--offen === 0) fehler(f);
+            });
+        });
+    });
+}
+
+// Eine einzelne Textsuche über alle Wege (schnellster mit Treffern gewinnt)
+function onlineTextSuche(such) {
+    const woerter = such.split(/\s+/).map(function (w) { return w.replace(/[^\p{L}\p{N}%.,'-]/gu, ""); })
+        .filter(Boolean);
+    const q = woerter.join(" AND ");
+    const sprache = daten.einstellungen.sprache === "de" ? "de,en" : "en,de";
+    // 1. + 2. Weg gleichzeitig: unser Online-Speicher und die neue Suche von Open Food Facts
+    return erstesMitTreffern([
+        wolkeOffSuche(such, sprache),
+        offHolen("https://search.openfoodfacts.org/search?q=" + encodeURIComponent(q) +
+                "&langs=" + sprache + "&page_size=40&fields=" + OFF_FELDER)
+            .then(function (j) { return j.hits || []; })
+    ]).then(function (liste) {
+        if (liste.length) return liste;
+        throw new Error("leer");
+    }).catch(function () {
+        // Plan B: die klassische Suche von Open Food Facts
+        return offHolen("https://world.openfoodfacts.org/cgi/search.pl?search_terms=" + encodeURIComponent(such) +
+                "&search_simple=1&action=process&json=1&page_size=40&fields=" + OFF_FELDER)
+            .then(function (j) { return j.products || []; });
+    });
+}
+
+// Gemerkte Ergebnisse (10 Minuten) – spart Zeit und schont Open Food Facts (die sperren bei zu vielen Anfragen kurz)
+const ONLINE_GEDAECHTNIS = {};
+const ONLINE_MERKZEIT = 10 * 60 * 1000;
+
+// Sucht online. Ergebnis: Promise mit einer Liste einfacher Produkte (Marken & Österreich zuerst)
 function onlineSuchen(text) {
     const such = text.trim();
-    let anfrage;
+    const schluessel = such.toLowerCase();
+    const gemerkt = ONLINE_GEDAECHTNIS[schluessel];
+    if (gemerkt && Date.now() - gemerkt.zeit < ONLINE_MERKZEIT) return Promise.resolve(gemerkt.liste);
 
-    if (/^\d{8,14}$/.test(such)) {
+    let anfrage;
+    const istCode = /^\d{8,14}$/.test(such);
+    if (istCode) {
         // Strichcode: direkt das eine Produkt holen
         anfrage = offHolen("https://world.openfoodfacts.org/api/v2/product/" + such + ".json?fields=" + OFF_FELDER)
             .then(function (j) { return j && j.product ? [Object.assign({ code: such }, j.product)] : []; });
     } else {
-        // Alle Wörter müssen vorkommen ("nöm AND joghurt")
-        const woerter = such.split(/\s+/).map(function (w) { return w.replace(/[^\p{L}\p{N}%.,'-]/gu, ""); })
-            .filter(Boolean);
-        const q = woerter.join(" AND ");
-        const sprache = daten.einstellungen.sprache === "de" ? "de,en" : "en,de";
-        // 1. Weg: über unseren eigenen Online-Speicher (der darf Open Food Facts fragen)
-        anfrage = wolkeOffSuche(such, sprache)
-            .catch(function () {
-                // 2. Weg: direkt (klappt nur, wenn Open Food Facts es erlaubt)
-                return offHolen("https://search.openfoodfacts.org/search?q=" + encodeURIComponent(q) +
-                        "&langs=" + sprache + "&page_size=30&fields=" + OFF_FELDER)
-                    .then(function (j) { return j.hits || []; });
-            })
-            .catch(function () {
-                // Plan B: die klassische Suche von Open Food Facts
-                return offHolen("https://world.openfoodfacts.org/cgi/search.pl?search_terms=" + encodeURIComponent(such) +
-                        "&search_simple=1&action=process&json=1&page_size=30&fields=" + OFF_FELDER)
-                    .then(function (j) { return j.products || []; });
-            });
+        // Zusätzlich mit anderen Wörtern suchen (Morefit → More Nutrition, Proteinpulver → Whey Protein …)
+        const klein = such.toLowerCase();
+        let anders = klein;
+        ONLINE_SYNONYME.forEach(function (paar) { anders = anders.replace(paar[0], paar[1]); });
+        const suchen = [onlineTextSuche(such)];
+        if (anders !== klein) suchen.push(onlineTextSuche(anders).catch(function () { return []; }));
+        anfrage = Promise.all(suchen.map(function (s, i) {
+            // die Hauptsuche darf scheitern, wenn die zweite etwas findet
+            return i === 0 ? s.catch(function (f) { return { fehler: f }; }) : s;
+        })).then(function (ergebnisse) {
+            const haupt = ergebnisse[0];
+            const zusatz = ergebnisse[1] || [];
+            if (haupt && haupt.fehler) {
+                if (zusatz.length) return zusatz;
+                throw haupt.fehler;
+            }
+            return haupt.concat(zusatz);
+        });
     }
 
-    return anfrage.then(function (roh) {
-        const gesehen = {};
-        return roh.map(offProduktLesen)
-            .filter(function (p) {
-                if (!p || gesehen[p.code]) return false;
-                gesehen[p.code] = true;
-                return true;
-            })
-            .map(function (p) {
-                // Wie gut passt das Produkt wirklich zum Suchtext? (gleiche tolerante Suche wie in der App)
-                if (typeof suchNormal === "function" && !/^\d{8,14}$/.test(such)) {
-                    const woerter = suchNormal(such).split(" ").filter(Boolean);
-                    const text = suchNormal(p.name + " " + p.marke);
-                    const textWoerter = text.split(" ");
-                    let punkte = 0, alle = true;
-                    woerter.forEach(function (w) { const x = wortPunkte(w, text, textWoerter); if (!x) alle = false; punkte += x; });
-                    p.punkte = (alle ? 100 : 0) + punkte;
-                } else {
-                    p.punkte = 0;
-                }
-                return p;
-            })
-            .sort(function (a, b) {
-                if (a.punkte !== b.punkte) return b.punkte - a.punkte;
-                return (b.inOesterreich ? 1 : 0) - (a.inOesterreich ? 1 : 0);
-            })
-            .filter(function (p, i, liste) {
-                // Passen genug Produkte zu ALLEN Wörtern, die unpassenden weglassen
-                const gute = liste.filter(function (x) { return x.punkte >= 100; }).length;
-                return gute >= 3 ? p.punkte >= 100 : true;
-            })
-            .slice(0, 20);
+    // klappt es nicht, nach kurzer Pause genau einmal nochmal (Server sind manchmal kurz überlastet)
+    const mitWiederholung = anfrage.catch(function () {
+        return new Promise(function (r) { setTimeout(r, 1500); }).then(function () {
+            return istCode
+                ? offHolen("https://world.openfoodfacts.org/api/v2/product/" + such + ".json?fields=" + OFF_FELDER)
+                    .then(function (j) { return j && j.product ? [Object.assign({ code: such }, j.product)] : []; })
+                : onlineTextSuche(such);
+        });
     });
+
+    return mitWiederholung.then(function (roh) {
+        const liste = onlineSortieren(roh, such, istCode);
+        ONLINE_GEDAECHTNIS[schluessel] = { zeit: Date.now(), liste: liste };
+        return liste;
+    });
+}
+
+// Passgenauigkeit bewerten, Doppelte & namenlose "No-Name"-Treffer aussortieren
+function onlineSortieren(roh, such, istCode) {
+    const gesehen = {};
+    const suchWoerter = typeof suchNormal === "function" ? suchNormal(such).split(" ").filter(Boolean) : [];
+    // auch die Synonyme zählen als Treffer ("morefit" passt zu "More Nutrition")
+    let anders = such.toLowerCase();
+    ONLINE_SYNONYME.forEach(function (paar) { anders = anders.replace(paar[0], paar[1]); });
+    const andereWoerter = typeof suchNormal === "function" ? suchNormal(anders).split(" ").filter(Boolean) : [];
+
+    function bewerten(woerter, text, textWoerter) {
+        let punkte = 0, alle = true;
+        woerter.forEach(function (w) { const x = wortPunkte(w, text, textWoerter); if (!x) alle = false; punkte += x; });
+        return (alle ? 100 : 0) + punkte;
+    }
+
+    const liste = roh.map(offProduktLesen)
+        .filter(function (p) {
+            if (!p || gesehen[p.code]) return false;
+            gesehen[p.code] = true;
+            // gleiches Produkt unter anderer Nummer (gleicher Name, gleiche Marke, gleiche kcal) nur einmal
+            const doppelt = (p.name + "|" + p.marke + "|" + p.kcal100).toLowerCase();
+            if (gesehen[doppelt]) return false;
+            gesehen[doppelt] = true;
+            return true;
+        })
+        .map(function (p) {
+            if (suchWoerter.length && !istCode) {
+                const text = suchNormal(p.name + " " + p.alleMarken);
+                const textWoerter = text.split(" ");
+                p.punkte = Math.max(bewerten(suchWoerter, text, textWoerter),
+                    andereWoerter.length ? bewerten(andereWoerter, text, textWoerter) : 0);
+                // gesuchtes Wort steckt in der Marke (z. B. "more") → ganz nach oben
+                if (p.alleMarken && suchWoerter.concat(andereWoerter).some(function (w) {
+                    return w.length >= 3 && suchNormal(p.alleMarken).indexOf(w) !== -1;
+                })) p.punkte += 30;
+            } else {
+                p.punkte = 0;
+            }
+            if (p.marke) p.punkte += 15;          // Produkte mit Marke sind fast immer brauchbarer
+            if (p.inOesterreich) p.punkte += 5;   // in Österreich erhältlich
+            return p;
+        })
+        .sort(function (a, b) { return b.punkte - a.punkte; });
+
+    // Passen genug Produkte zu ALLEN Wörtern, die unpassenden weglassen
+    const gute = liste.filter(function (x) { return x.punkte >= 100; });
+    let ergebnis = gute.length >= 3 ? gute : liste;
+    // Gibt es genug Markenprodukte, die ohne Marke ("Proteinpulver", sonst nichts) weglassen
+    const mitMarke = ergebnis.filter(function (x) { return x.marke; });
+    if (mitMarke.length >= 4) ergebnis = mitMarke;
+    return ergebnis.slice(0, 25);
 }
 
 // Übernimmt ein Online-Produkt als Lebensmittel. Gibt es das schon (z. B. als Start-Produkt), wird das genommen.
@@ -173,20 +268,28 @@ function onlineUebernehmen(produkt) {
 
 // Baut den Kasten "Nicht dabei? Online suchen" unter einer Trefferliste.
 // beimUebernehmen(lm) wird aufgerufen, wenn jemand ein Produkt antippt.
-function onlineKasten(text, beimUebernehmen) {
+// automatisch = true → gleich (nach kurzem Warten aufs Fertigtippen) selbst online suchen
+let onlineWarteTimer = null;
+function onlineKasten(text, beimUebernehmen, automatisch) {
     const kasten = el("div", "online");
-    const knopf = el("button", "online-knopf");
-    knopf.type = "button";
-    knopf.appendChild(el("span", "online-icon", "🌐"));
-    const beschriftung = el("span", "online-text");
-    beschriftung.appendChild(el("strong", "", t("onlineSuchen", { text: text.trim() })));
-    beschriftung.appendChild(el("small", "", t("onlineHinweis")));
-    knopf.appendChild(beschriftung);
-    kasten.appendChild(knopf);
 
-    knopf.addEventListener("click", function () {
+    function knopfZeigen() {
         kasten.innerHTML = "";
-        kasten.appendChild(el("p", "online-status", t("onlineLaedt")));
+        const knopf = el("button", "online-knopf");
+        knopf.type = "button";
+        knopf.appendChild(el("span", "online-icon", "🌐"));
+        const beschriftung = el("span", "online-text");
+        beschriftung.appendChild(el("strong", "", t("onlineSuchen", { text: text.trim() })));
+        beschriftung.appendChild(el("small", "", t("onlineHinweis")));
+        knopf.appendChild(beschriftung);
+        kasten.appendChild(knopf);
+        knopf.addEventListener("click", suchen);
+    }
+
+    function suchen() {
+        clearTimeout(onlineWarteTimer);
+        kasten.innerHTML = "";
+        kasten.appendChild(el("p", "online-status laedt", t("onlineLaedt")));
         onlineSuchen(text).then(function (produkte) {
             kasten.innerHTML = "";
             if (produkte.length === 0) {
@@ -199,9 +302,26 @@ function onlineKasten(text, beimUebernehmen) {
             });
         }).catch(function () {
             kasten.innerHTML = "";
-            kasten.appendChild(el("p", "online-status fehler", t("onlineFehler")));
+            // Nur "offline" sagen, wenn das Handy wirklich kein Internet hat
+            const offline = typeof navigator !== "undefined" && navigator.onLine === false;
+            kasten.appendChild(el("p", "online-status fehler", t(offline ? "onlineOffline" : "onlineBesetzt")));
+            const nochmal = el("button", "knopf-zweit online-nochmal", t("nochmalVersuchen"));
+            nochmal.type = "button";
+            nochmal.addEventListener("click", suchen);
+            kasten.appendChild(nochmal);
         });
-    });
+    }
+
+    clearTimeout(onlineWarteTimer);
+    const gemerkt = ONLINE_GEDAECHTNIS[text.trim().toLowerCase()];
+    if (automatisch && gemerkt && Date.now() - gemerkt.zeit < ONLINE_MERKZEIT) {
+        suchen(); // schon bekannt → sofort zeigen
+    } else if (automatisch) {
+        kasten.appendChild(el("p", "online-status laedt", t("onlineLaedt")));
+        onlineWarteTimer = setTimeout(function () { if (kasten.isConnected) suchen(); }, 700);
+    } else {
+        knopfZeigen();
+    }
     return kasten;
 }
 

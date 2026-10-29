@@ -345,7 +345,9 @@ function wortPunkte(suchwort, name, nameWoerter) {
 function suchPunkte(lm, suchWoerter, suchGanz) {
     const creator = lm.influencer ? findeCreator(lm.influencer) : null;
     const namen = [lm.name, lm.marke, lm.laden, creator && creator.handle, creator && creator.name]
-        .concat(lm.namen ? [lm.namen.en, lm.namen.de] : []).filter(Boolean).map(suchNormal);
+        .concat(lm.namen ? [lm.namen.en, lm.namen.de] : [])
+        .concat(STARTDATEN_NACH_ID[lm.id] && STARTDATEN_NACH_ID[lm.id].stichworte ? [STARTDATEN_NACH_ID[lm.id].stichworte] : [])
+        .filter(Boolean).map(suchNormal);
     const alle = namen.join(" ");
     const alleWoerter = alle.split(" ");
     // ganzer Suchtext ohne Leerzeichen ("mandeldrink" findet "Mandel Drink")
@@ -410,7 +412,7 @@ function zeichneListe() {
         liste.appendChild(onlineKasten(suchtext, function (lm) {
             zeigeMeldung(t("onlineUebernommen", { name: anzeigeName(lm) }));
             allesZeichnen();
-        }));
+        }, treffer.length < 3));
     }
 }
 
@@ -464,7 +466,7 @@ function eintragKarte(eintrag) {
     const minus = el("button", "rund minus", "−");
     minus.type = "button";
     minus.setAttribute("aria-label", t("weniger") + " " + name);
-    const feld = el("label", "menge-wert");
+    const feld = el("div", "menge-wert"); // kein <label>: sonst springt beim Tippen daneben die Tastatur auf
     const eingabe = el("input");
     eingabe.type = "text";
     eingabe.inputMode = "decimal";
@@ -474,25 +476,17 @@ function eintragKarte(eintrag) {
     eingabe.value = stueck ? feldWert(Math.round(eintrag.gramm / stueck.g * 2) / 2) : feldWert(eintrag.gramm);
     eingabe.setAttribute("aria-label", t("grammVon", { name: name }));
     feld.appendChild(eingabe);
-    if (lm.stueck) {
-        const einheit = el("button", "einheit-knopf", stueck ? t(stueck.art === "scheibe" ? "scheibeKurz" : "stueckKurz") : "g");
-        einheit.type = "button";
-        einheit.setAttribute("aria-label", t("einheitWechseln"));
-        einheit.addEventListener("click", function (e) {
-            e.preventDefault();
-            einheitWechseln(eintrag.id);
-        });
-        feld.appendChild(einheit);
-    } else {
-        feld.appendChild(el("span", "", "g"));
-    }
+    if (!lm.stueck) feld.appendChild(el("span", "", "g"));
     const plus = el("button", "rund plus", "+");
     plus.type = "button";
     plus.setAttribute("aria-label", t("mehr") + " " + name);
     steuerung.appendChild(minus);
     steuerung.appendChild(feld);
     steuerung.appendChild(plus);
-    info.appendChild(steuerung);
+    const zeileMenge = el("div", "menge-zeile");
+    zeileMenge.appendChild(steuerung);
+    if (lm.stueck) zeileMenge.appendChild(einheitUmschalter(eintrag, lm));
+    info.appendChild(zeileMenge);
     karte.appendChild(info);
 
     const entfernen = el("button", "eintrag-entfernen", "✕");
@@ -508,6 +502,25 @@ function eintragKarte(eintrag) {
     entfernen.addEventListener("click", function () { eintragEntfernen(eintrag.id); });
 
     return karte;
+}
+
+// Umschalter "g | Stk." (bzw. Scheibe/Portion) – beide Möglichkeiten immer sichtbar, ein Tipp wechselt
+function einheitText(stueck) {
+    return t(stueck.art === "scheibe" ? "scheibeKurz" : stueck.art === "portion" ? "portionKurz" : "stueckKurz");
+}
+function einheitUmschalter(eintrag, lm) {
+    const gruppe = el("div", "einheit-wahl");
+    gruppe.setAttribute("role", "group");
+    gruppe.setAttribute("aria-label", t("einheitWechseln"));
+    [["g", "g"], ["stueck", einheitText(lm.stueck)]].forEach(function (paar) {
+        const aktiv = (eintrag.einheit === "stueck") === (paar[0] === "stueck");
+        const k = el("button", "einheit-option" + (aktiv ? " aktiv" : ""), paar[1]);
+        k.type = "button";
+        k.setAttribute("aria-pressed", aktiv ? "true" : "false");
+        k.addEventListener("click", function () { if (!aktiv) einheitWechseln(eintrag.id); });
+        gruppe.appendChild(k);
+    });
+    return gruppe;
 }
 
 function zeichnePlan() {
@@ -614,7 +627,8 @@ function zeichneTagTreffer() {
         box.appendChild(neu);
     }
     if (text.trim().length >= 2) {
-        box.appendChild(onlineKasten(text, function (lm) { allesZeichnen(); tagSucheFertig(lm); }));
+        // Wenig oder nichts gefunden → gleich selbst online weitersuchen
+        box.appendChild(onlineKasten(text, function (lm) { allesZeichnen(); tagSucheFertig(lm); }, treffer.length < 3));
     }
 }
 
@@ -804,7 +818,7 @@ function zeichneAuswahl() {
         liste.appendChild(onlineKasten(gesuchtOnline, function (lm) {
             allesZeichnen();
             waehle(lm);
-        }));
+        }, treffer.length < 3));
     }
 }
 
@@ -1801,6 +1815,24 @@ gemeinsamAktualisieren(); // neue Lebensmittel/Rezepte "für alle" holen
     const setzen = function () { document.documentElement.style.setProperty("--sichtbar", Math.round(vv.height) + "px"); };
     vv.addEventListener("resize", setzen);
     setzen();
+})();
+
+// Kein Zoomen mit zwei Fingern (iPhone-Safari ignoriert "user-scalable=no" sonst)
+["gesturestart", "gesturechange", "gestureend"].forEach(function (art) {
+    document.addEventListener(art, function (e) { e.preventDefault(); }, { passive: false });
+});
+// Kein Doppeltipp-Zoom (z. B. wenn man knapp neben − tippt)
+(function () {
+    let letzterTipp = 0;
+    document.addEventListener("touchend", function (e) {
+        const jetzt = Date.now();
+        const ziel = e.target;
+        // Knöpfe (+ / −) dürfen schnell hintereinander gedrückt werden – nur "leere" Flächen sind gesperrt
+        const istEingabe = ziel && (ziel.tagName === "INPUT" || ziel.tagName === "TEXTAREA" || ziel.isContentEditable ||
+            (ziel.closest && ziel.closest("button, a, label, select")));
+        if (!istEingabe && jetzt - letzterTipp < 350) e.preventDefault();
+        letzterTipp = jetzt;
+    }, { passive: false });
 })();
 
 // Als Web-App: Notvorrat anlegen, damit sie auch offline startet (nicht in automatischen Tests)

@@ -172,7 +172,7 @@ function codeErkannt(code) {
         ergebnis.appendChild(el("p", "online-quelle", t("onlineQuelle")));
         ergebnis.appendChild(onlineTrefferZeile(produkte[0], scanUebernehmen));
     }).catch(function () {
-        setzeScanStatus(t("onlineFehler"));
+        setzeScanStatus(t(navigator.onLine === false ? "onlineOffline" : "onlineFehler"));
         ergebnis.appendChild(scanSelbstAnlegenKnopf());
     });
 }

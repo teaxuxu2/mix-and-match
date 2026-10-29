@@ -741,7 +741,52 @@ const STARTDATEN = [
     { id: "carn-leberkaese", seit: 9, emoji: "🍖", de: "Leberkäse", en: "Leberkäse (meatloaf)", kcal100: 290, protein100: 12, kh100: 1, fett100: 26.5, quelle: "durchschnitt" },
     { id: "carn-leberwurst", seit: 9, emoji: "🍖", de: "Leberwurst", en: "Liver Sausage", kcal100: 325, protein100: 15, kh100: 1, fett100: 29, quelle: "durchschnitt" },
     { id: "carn-gelatine", seit: 9, emoji: "🍮", de: "Gelatine (Pulver)", en: "Gelatin (powder)", kcal100: 335, protein100: 85.6, kh100: 0, fett100: 0.1, quelle: "usda" },
-    { id: "carn-kollagen", seit: 9, emoji: "💪", de: "Kollagenpulver", en: "Collagen Powder", kcal100: 360, protein100: 90, kh100: 0, fett100: 0, quelle: "durchschnitt" }
+    { id: "carn-kollagen", seit: 9, emoji: "💪", de: "Kollagenpulver", en: "Collagen Powder", kcal100: 360, protein100: 90, kh100: 0, fett100: 0, quelle: "durchschnitt" },
+
+    // ===== Version 10: Balkan, Kebab & Imbiss, Aufschnitt in Scheiben, Marken-Proteinpulver (Wunsch Ivy) =====
+    // Durchschnittswerte typischer Portionen im österreichischen Imbiss/Handel – Richtwerte.
+    { id: "imb-cevapcici", seit: 10, emoji: "🍢", de: "Ćevapčići / Cevapcici (gegrillt)", en: "Cevapcici (grilled)", stichworte: "cevape cevapi cevap civapcici", kcal100: 260, protein100: 18, kh100: 2, fett100: 20, quelle: "durchschnitt" },
+    { id: "imb-pljeskavica", seit: 10, emoji: "🍔", de: "Pljeskavica (gegrillt)", en: "Pljeskavica (grilled)", stichworte: "balkan burger", kcal100: 255, protein100: 18, kh100: 3, fett100: 19, quelle: "durchschnitt" },
+    { id: "imb-raznjici", seit: 10, emoji: "🍢", de: "Ražnjići / Fleischspieß (gegrillt)", en: "Raznjici (grilled skewer)", stichworte: "raznjici spiess", kcal100: 200, protein100: 26, kh100: 0, fett100: 10.5, quelle: "durchschnitt" },
+    { id: "imb-kebab-fleisch", seit: 10, emoji: "🥙", de: "Kebab-Fleisch / Döner-Fleisch (Kalb/Rind)", en: "Kebab / Doner Meat (veal/beef)", stichworte: "doner doener dner gyros drehspiess", kcal100: 215, protein100: 18, kh100: 3, fett100: 14.5, quelle: "durchschnitt" },
+    { id: "imb-kebab-huhn", seit: 10, emoji: "🥙", de: "Hühner-Kebab-Fleisch / Hähnchen-Döner", en: "Chicken Kebab Meat", stichworte: "doner doener chicken haehnchen huhn hendl", kcal100: 165, protein100: 21, kh100: 2, fett100: 8, quelle: "durchschnitt" },
+    { id: "imb-gyros", seit: 10, emoji: "🥙", de: "Gyros (Schwein, gebraten)", en: "Gyros (pork, fried)", kcal100: 210, protein100: 20, kh100: 1.5, fett100: 14, quelle: "durchschnitt" },
+    { id: "imb-doener-brot", seit: 10, emoji: "🥙", de: "Kebab / Döner im Brot (komplett)", en: "Doner Kebab in Bread (whole)", stichworte: "doner doener kebap", kcal100: 215, protein100: 11, kh100: 22, fett100: 9, portion: 400, quelle: "durchschnitt" },
+    { id: "imb-dueruem", seit: 10, emoji: "🌯", de: "Dürüm / Kebab-Wrap (komplett)", en: "Durum Kebab Wrap (whole)", stichworte: "durum duerum yufka kebab", kcal100: 200, protein100: 10, kh100: 21, fett100: 8.5, portion: 400, quelle: "durchschnitt" },
+    { id: "imb-kebab-box", seit: 10, emoji: "🍟", de: "Kebab-Box mit Pommes", en: "Kebab Box with Fries", stichworte: "doner doener box", kcal100: 230, protein100: 10, kh100: 20, fett100: 12, portion: 450, quelle: "durchschnitt" },
+    { id: "imb-lahmacun", seit: 10, emoji: "🫓", de: "Lahmacun (türkische Pizza)", en: "Lahmacun", kcal100: 225, protein100: 9, kh100: 30, fett100: 7.5, quelle: "durchschnitt" },
+    { id: "imb-fladenbrot", seit: 10, emoji: "🫓", de: "Fladenbrot / Pide", en: "Turkish Flatbread / Pide", stichworte: "lepinja somun", kcal100: 265, protein100: 8.5, kh100: 51, fett100: 2.5, quelle: "durchschnitt" },
+    { id: "imb-lepinja", seit: 10, emoji: "🫓", de: "Lepinja / Somun (Balkan-Fladenbrot)", en: "Lepinja (Balkan flatbread)", stichworte: "cevapi brot", kcal100: 270, protein100: 9, kh100: 52, fett100: 2.5, quelle: "durchschnitt" },
+    { id: "imb-knoblauchsauce", seit: 10, emoji: "🥣", de: "Knoblauchsauce / Joghurtsauce (Kebab)", en: "Garlic Yogurt Sauce (kebab)", stichworte: "kebabsauce tzatziki weisse sauce", kcal100: 210, protein100: 2.5, kh100: 6, fett100: 20, quelle: "durchschnitt" },
+    { id: "imb-tzatziki", seit: 10, emoji: "🥒", de: "Tzatziki", en: "Tzatziki", kcal100: 115, protein100: 4, kh100: 4, fett100: 9, quelle: "durchschnitt" },
+    { id: "imb-ajvar", seit: 10, emoji: "🫑", de: "Ajvar", en: "Ajvar (pepper relish)", kcal100: 85, protein100: 1.5, kh100: 8, fett100: 5, quelle: "durchschnitt" },
+    { id: "imb-kajmak", seit: 10, emoji: "🧈", de: "Kajmak", en: "Kaymak (clotted cream)", kcal100: 380, protein100: 4, kh100: 2.5, fett100: 40, quelle: "durchschnitt" },
+    { id: "imb-burek-fleisch", seit: 10, emoji: "🥧", de: "Burek mit Fleisch", en: "Burek with Meat", kcal100: 285, protein100: 10, kh100: 25, fett100: 16, quelle: "durchschnitt" },
+    { id: "imb-faschiertes", seit: 10, emoji: "🥩", de: "Faschiertes gemischt (roh)", en: "Mixed Minced Meat (raw)", stichworte: "hackfleisch gemischt", kcal100: 235, protein100: 18, kh100: 0, fett100: 18, quelle: "durchschnitt" },
+    { id: "imb-schnitzel", seit: 10, emoji: "🍖", de: "Wiener Schnitzel / Schweinsschnitzel (paniert, gebacken)", en: "Breaded Schnitzel (fried)", kcal100: 235, protein100: 17, kh100: 11, fett100: 13.5, quelle: "durchschnitt" },
+    { id: "imb-grillhendl", seit: 10, emoji: "🍗", de: "Grillhendl mit Haut", en: "Rotisserie Chicken with Skin", kcal100: 215, protein100: 26, kh100: 0, fett100: 12, quelle: "usda" },
+    { id: "imb-schweinsbraten", seit: 10, emoji: "🍖", de: "Schweinsbraten", en: "Roast Pork", kcal100: 245, protein100: 24, kh100: 0, fett100: 16.5, quelle: "durchschnitt" },
+    { id: "imb-burenwurst", seit: 10, emoji: "🌭", de: "Burenwurst", en: "Burenwurst (Austrian sausage)", kcal100: 290, protein100: 12, kh100: 1, fett100: 26.5, quelle: "durchschnitt" },
+    { id: "imb-bratwurst", seit: 10, emoji: "🌭", de: "Bratwurst", en: "Bratwurst", kcal100: 300, protein100: 13, kh100: 1, fett100: 27, quelle: "durchschnitt" },
+    { id: "imb-pommes", seit: 10, emoji: "🍟", de: "Pommes frites", en: "French Fries", kcal100: 300, protein100: 3.5, kh100: 38, fett100: 15, quelle: "usda" },
+
+    // Aufschnitt & Käse – auch in Scheiben eintragbar
+    { id: "sch-emmentaler", seit: 10, emoji: "🧀", de: "Emmentaler", en: "Emmental", kcal100: 380, protein100: 28.5, kh100: 0, fett100: 29.5, quelle: "durchschnitt" },
+    { id: "sch-edamer", seit: 10, emoji: "🧀", de: "Edamer", en: "Edam", kcal100: 350, protein100: 25, kh100: 1.4, fett100: 27.8, quelle: "usda" },
+    { id: "sch-tilsiter", seit: 10, emoji: "🧀", de: "Tilsiter", en: "Tilsit", kcal100: 340, protein100: 24.4, kh100: 1.9, fett100: 26, quelle: "usda" },
+    { id: "sch-butterkaese", seit: 10, emoji: "🧀", de: "Butterkäse", en: "Butter Cheese", kcal100: 335, protein100: 21, kh100: 0.1, fett100: 28, quelle: "durchschnitt" },
+    { id: "sch-gouda-light", seit: 10, emoji: "🧀", de: "Gouda light (ca. 17 % Fett)", en: "Gouda light", kcal100: 265, protein100: 31, kh100: 0, fett100: 15.5, quelle: "durchschnitt" },
+    { id: "sch-schmelzkaese", seit: 10, emoji: "🧀", de: "Schmelzkäse / Toastkäse (Scheiben)", en: "Processed Cheese Slices", stichworte: "toastkaese scheiblettenkaese", kcal100: 285, protein100: 14, kh100: 6, fett100: 22.5, quelle: "durchschnitt" },
+    { id: "sch-extrawurst", seit: 10, emoji: "🍖", de: "Extrawurst / Fleischwurst", en: "Extrawurst (bologna)", stichworte: "lyoner fleischwurst", kcal100: 250, protein100: 12, kh100: 1, fett100: 22, quelle: "durchschnitt" },
+    { id: "sch-putenaufschnitt", seit: 10, emoji: "🦃", de: "Putenbrust-Aufschnitt", en: "Sliced Turkey Breast", kcal100: 105, protein100: 21, kh100: 1, fett100: 1.8, quelle: "durchschnitt" },
+    { id: "sch-mortadella", seit: 10, emoji: "🍖", de: "Mortadella", en: "Mortadella", kcal100: 311, protein100: 16.4, kh100: 3, fett100: 25.4, quelle: "usda" },
+
+    // Marken-Proteinpulver (Durchschnitt der Sorten laut Packung)
+    { id: "mk-more-total-protein", seit: 10, emoji: "💪", de: "More Nutrition Total Protein (Durchschnitt Sorten)", en: "More Nutrition Total Protein (avg. flavours)", marke: "More Nutrition", stichworte: "more morefit more fit moreprotein proteinpulver eiweisspulver shake", kcal100: 390, protein100: 78, kh100: 5.5, fett100: 6.5, quelle: "durchschnitt" },
+    { id: "mk-more-total-protein-neutral", seit: 10, emoji: "💪", de: "More Nutrition Total Protein Geschmacksneutral", en: "More Nutrition Total Protein Unflavoured", marke: "More Nutrition", stichworte: "more morefit more fit proteinpulver eiweisspulver neutral", kcal100: 381, protein100: 81, kh100: 3.8, fett100: 3.8, quelle: "durchschnitt" },
+    { id: "mk-more-vegan-protein", seit: 10, emoji: "🌱", de: "More Nutrition Total Vegan Protein", en: "More Nutrition Total Vegan Protein", marke: "More Nutrition", stichworte: "more morefit more fit proteinpulver eiweisspulver vegan", kcal100: 351, protein100: 75, kh100: 8.1, fett100: 1.9, quelle: "durchschnitt" },
+    { id: "start-whey-iso", seit: 10, emoji: "💪", de: "Whey-Isolat-Proteinpulver", en: "Whey Isolate Protein Powder", stichworte: "proteinpulver eiweisspulver isolat", kcal100: 370, protein100: 86, kh100: 2.5, fett100: 1, quelle: "durchschnitt" },
+    { id: "start-vegan-protein", seit: 10, emoji: "🌱", de: "Veganes Proteinpulver (Erbse/Reis)", en: "Vegan Protein Powder (pea/rice)", stichworte: "proteinpulver eiweisspulver pflanzlich", kcal100: 380, protein100: 75, kh100: 6, fett100: 6.5, quelle: "durchschnitt" }
 ];
 
 // Wie viel wiegt EIN Stück bzw. eine Scheibe? (Durchschnitt, essbarer Anteil; Basis USDA "medium"/Packungsangaben)
@@ -755,7 +800,25 @@ const STUECK_GEWICHTE = {
     "start-ricecake": [8, "scheibe"], "start-bread": [50, "scheibe"], "usda-toast": [25, "scheibe"],
     "usda-crispbread": [10, "scheibe"], "usda-kaisersemmel": [55, "stueck"],
     "start-wrap": [60, "stueck"], "start-proteinbar": [50, "stueck"],
-    "carn-eigelb": [17, "stueck"], "carn-bacon-crispy": [8, "scheibe"], "carn-bacon-raw": [15, "scheibe"]
+    "carn-eigelb": [17, "stueck"], "carn-bacon-crispy": [8, "scheibe"], "carn-bacon-raw": [15, "scheibe"],
+    // Version 10: Käse & Aufschnitt in Scheiben, Imbiss in Stück
+    "start-gouda": [20, "scheibe"], "sch-gouda-light": [20, "scheibe"], "sch-emmentaler": [20, "scheibe"],
+    "sch-edamer": [20, "scheibe"], "sch-tilsiter": [20, "scheibe"], "sch-butterkaese": [20, "scheibe"],
+    "sch-schmelzkaese": [20, "scheibe"], "carn-bergkaese": [20, "scheibe"], "off-20851255": [20, "scheibe"],
+    "off-4061462490927": [20, "scheibe"], "off-4061462227349": [20, "scheibe"], "off-4056489594116": [20, "scheibe"],
+    "start-mozzarella": [125, "stueck"], "carn-camembert": [125, "stueck"],
+    "start-ham": [20, "scheibe"], "start-turkey-ham": [20, "scheibe"], "sch-putenaufschnitt": [20, "scheibe"],
+    "carn-rohschinken": [15, "scheibe"], "carn-tiroler-speck": [10, "scheibe"], "carn-bauchspeck": [10, "scheibe"],
+    "carn-salami": [6, "scheibe"], "carn-leberkaese": [80, "scheibe"], "sch-extrawurst": [15, "scheibe"],
+    "sch-mortadella": [15, "scheibe"], "start-smoked-salmon": [20, "scheibe"],
+    "imb-cevapcici": [30, "stueck"], "imb-pljeskavica": [150, "stueck"], "imb-raznjici": [70, "stueck"],
+    "imb-doener-brot": [400, "stueck"], "imb-dueruem": [400, "stueck"], "imb-lahmacun": [180, "stueck"],
+    "imb-lepinja": [120, "stueck"], "imb-burenwurst": [150, "stueck"], "imb-bratwurst": [120, "stueck"],
+    "imb-schnitzel": [150, "stueck"], "mk-janatuerlich-frankfurter": [50, "stueck"],
+    "start-whey": [30, "portion"], "start-whey-iso": [30, "portion"], "start-vegan-protein": [30, "portion"],
+    "mk-more-total-protein": [30, "portion"], "mk-more-total-protein-neutral": [30, "portion"], "mk-more-vegan-protein": [30, "portion"],
+    "start-casein": [30, "portion"], "fabi-prozis-whey": [30, "portion"], "off-4099200188812": [30, "portion"],
+    "off-4061459356328": [30, "portion"], "carn-kollagen": [10, "portion"]
 };
 STARTDATEN.forEach(function (eintrag) {
     const s = STUECK_GEWICHTE[eintrag.id];
