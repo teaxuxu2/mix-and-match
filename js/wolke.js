@@ -61,6 +61,11 @@ function echteWolke() {
         // ---------- Konto ----------
         sitzung: function () {
             if (!konfiguriert()) return Promise.resolve(null);
+            // Noch nie angemeldet und kein Bestätigungs-Link geöffnet? Dann Supabase gar nicht erst laden.
+            const ausLink = /access_token|refresh_token|type=signup/.test(location.hash) || /[?&]code=/.test(location.search);
+            let gemerkt = null;
+            try { gemerkt = localStorage.getItem("mmc_wolke_sitzung"); } catch (e) { gemerkt = null; }
+            if (!client && !gemerkt && !ausLink) return Promise.resolve(null);
             return ich().catch(function () { return null; });
         },
         registrieren: function (email, passwort, name) {

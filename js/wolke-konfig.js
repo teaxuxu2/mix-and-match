@@ -7,6 +7,6 @@
    Leer = die App läuft wie bisher nur auf dem Gerät.
 */
 const WOLKE_KONFIG = {
-    url: "",
-    anonSchluessel: ""
+    url: "https://lrryyxrxnmuzvuiqvifu.supabase.co",
+    anonSchluessel: "sb_publishable_DxhOyY40VkAJG7iY1V3J_w_QHkNfcUK"
 };
