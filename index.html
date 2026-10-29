@@ -100,6 +100,22 @@
         <!-- ===== Bereich: Mein Tag ===== -->
         <section class="bereich bereich-plan">
 
+            <!-- Ganz oben: Lebensmittel suchen + mit einem Tipp eintragen, Scanner, Sport -->
+            <div class="tag-oben">
+                <label class="suche tag-suche">
+                    <span aria-hidden="true">🔍</span>
+                    <input id="tagSuche" type="search" data-t-ph="tagSuchePh" placeholder="Add food …" autocomplete="off" enterkeyhint="search">
+                    <button type="button" class="suche-scan" id="tagScan" data-t-aria="scanOeffnen" data-t-title="scanOeffnen" aria-label="Scan barcode" title="Scan barcode">
+                        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M7 8v8M10 8v8M13 8v8M16.5 8v8" stroke="currentColor" stroke-width="1.6"/></svg>
+                    </button>
+                </label>
+                <button type="button" class="knopf-sport" id="knopfSport">
+                    <span aria-hidden="true">🏋️</span><span data-t="sport">Sport</span>
+                </button>
+            </div>
+            <div id="tagTreffer" class="tag-treffer liste kompakt" hidden></div>
+            <div id="schnellwahl" class="schnellwahl" role="group" data-t-aria="schnellwahl" aria-label="Quick add"></div>
+
             <div class="zusammenfassung">
                 <div class="datum-leiste">
                     <button type="button" class="knopf-pfeil" id="tagZurueck" data-t-aria="tagZurueck" aria-label="Previous day">‹</button>
@@ -137,6 +153,7 @@
             </div>
 
             <div id="mahlzeiten" class="mahlzeiten"></div>
+            <div id="sportTag" class="sport-tag"></div>
         </section>
     </main>
 
@@ -228,6 +245,93 @@
                 <span><b data-t="neuScan">Scan barcode</b><small data-t="neuScanText">Point the camera at the package</small></span>
             </button>
         </div>
+    </dialog>
+
+
+    <!-- ===== Fenster: Sport (Training des Tages) ===== -->
+    <dialog id="dialogSport" class="fenster">
+        <div class="fenster-kopf">
+            <h2 id="sportTitel">Sport today</h2>
+            <button type="button" class="knopf-icon" data-schliessen data-t-aria="schliessen" aria-label="Close">✕</button>
+        </div>
+        <div id="sportListe" class="sport-liste"></div>
+        <p class="unterzeile" data-t="sportNeuTitel">Add exercise:</p>
+        <div class="sport-arten">
+            <button type="button" class="sport-art" data-sport-neu="kraft"><span aria-hidden="true">🏋️</span><b data-t="art_kraft">Strength</b><small data-t="artText_kraft">Sets × weight</small></button>
+            <button type="button" class="sport-art" data-sport-neu="ausdauer"><span aria-hidden="true">🏃</span><b data-t="art_ausdauer">Cardio</b><small data-t="artText_ausdauer">Time + intervals</small></button>
+            <button type="button" class="sport-art" data-sport-neu="schwimmen"><span aria-hidden="true">🏊</span><b data-t="art_schwimmen">Swimming</b><small data-t="artText_schwimmen">Distance + sets</small></button>
+        </div>
+        <button type="button" class="knopf-zweit breit" id="sportBloecke" data-t="sportBloecke">📚 From my saved workouts</button>
+        <div id="sportPaketBox" class="sport-paket" hidden>
+            <p class="unterzeile" data-t="paketTitel">Save today's workout as a package:</p>
+            <div class="scan-zeile">
+                <input id="sportPaketName" class="eingabe-name" type="text" maxlength="40" data-t-ph="paketPh" placeholder="e.g. Leg day">
+                <button type="button" class="knopf-primaer" id="sportPaketSpeichern" data-t="speichernKurz">Save</button>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- ===== Fenster: gespeicherte Übungen & Pakete ===== -->
+    <dialog id="dialogBloecke" class="fenster">
+        <div class="fenster-kopf">
+            <h2 data-t="bloeckeTitel">My saved workouts</h2>
+            <button type="button" class="knopf-icon" data-schliessen data-t-aria="schliessen" aria-label="Close">✕</button>
+        </div>
+        <label class="suche">
+            <span aria-hidden="true">🔍</span>
+            <input id="blockSuche" type="search" data-t-ph="blockSuchePh" placeholder="Search exercises …" autocomplete="off">
+        </label>
+        <h3 class="block-titel" id="blockGanzeTitel" data-t="ganzesTraining">Take over a whole workout</h3>
+        <div id="blockGanze" class="sport-liste"></div>
+        <h3 class="block-titel" data-t="einzelneUebung">Single exercise</h3>
+        <div id="blockEinzeln" class="sport-liste"></div>
+    </dialog>
+
+    <!-- ===== Fenster: eine Übung ===== -->
+    <dialog id="dialogUebung" class="fenster">
+        <div class="fenster-kopf">
+            <h2 id="uebungTitel">Exercise</h2>
+            <button type="button" class="knopf-icon" data-schliessen data-t-aria="schliessen" aria-label="Close">✕</button>
+        </div>
+        <input id="uebungName" class="eingabe-name" type="text" maxlength="60" autocomplete="off" data-t-aria="uebungNameAria" aria-label="Exercise name">
+
+        <!-- Video: wie die Übung geht (Hochformat vom Handy) -->
+        <div class="uebung-video">
+            <div id="uebungVideoBox" class="video-hoch" hidden>
+                <video id="uebungVideo" playsinline controls loop muted preload="metadata"></video>
+            </div>
+            <div class="video-knoepfe">
+                <button type="button" class="knopf-zweit" id="uebungVideoKnopf">🎥 Add video</button>
+                <button type="button" class="knopf-zweit" id="uebungVideoWeg" data-t="videoEntfernen" hidden>Remove video</button>
+            </div>
+            <input id="uebungVideoInput" type="file" accept="video/*" hidden>
+        </div>
+
+        <!-- Kraft: Sätze -->
+        <div id="uebungKraft">
+            <h3 class="block-titel" data-t="saetze">Sets</h3>
+            <div id="uebungSaetze" class="saetze"></div>
+            <button type="button" class="knopf-hinzu" id="uebungSatzPlus" data-t="satzPlus">＋ Set</button>
+        </div>
+
+        <!-- Ausdauer / Schwimmen: Dauer, Strecke, Intervalle bzw. Abschnitte -->
+        <div id="uebungAusdauer">
+            <div class="werte-zeile">
+                <label class="wert-feld"><input id="uebungDauer" type="text" inputmode="decimal" placeholder="0"><span>min</span></label>
+                <label class="wert-feld"><input id="uebungDistanz" type="text" inputmode="decimal" placeholder="0"><span id="uebungDistanzEinheit">km</span></label>
+            </div>
+            <h3 class="block-titel" id="uebungAbschnitteTitel">Intervals</h3>
+            <div id="uebungAbschnitte" class="saetze"></div>
+            <div class="video-knoepfe">
+                <button type="button" class="knopf-hinzu" id="uebungAbschnittPlus">＋ Interval</button>
+                <button type="button" class="knopf-zweit" id="uebungWiederholen" data-t="wiederholen" hidden>↻ Repeat round</button>
+            </div>
+        </div>
+
+        <textarea id="uebungNotiz" class="anleitung-feld" rows="2" maxlength="300" data-t-ph="notizPh" placeholder="Note (optional)"></textarea>
+        <p id="uebungFehler" class="fehler" role="alert"></p>
+        <button type="button" class="knopf-primaer breit" id="uebungSpeichern" data-t="speichern">Save</button>
+        <button type="button" class="aktion gefahr" id="uebungLoeschen" hidden>🗑 Delete</button>
     </dialog>
 
     <!-- ===== Fenster: Barcode-Scanner ===== -->
@@ -427,6 +531,7 @@
     <script src="js/speicher.js"></script>
     <script src="js/online.js"></script>
     <script src="js/scanner.js"></script>
+    <script src="js/sport.js"></script>
     <script src="js/app.js"></script>
 </body>
 

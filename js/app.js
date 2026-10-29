@@ -431,47 +431,113 @@ function zeichnePlan() {
     const bereich = $("mahlzeiten");
     bereich.innerHTML = "";
 
-    MAHLZEITEN.forEach(function (mahlzeit) {
-        const box = el("section", "mahlzeit");
-        box.dataset.mahlzeit = mahlzeit;
+    // Eine einzige Liste für den ganzen Tag (keine Frühstück/Mittag/... mehr)
+    const box = el("section", "mahlzeit tagesliste");
+    box.dataset.mahlzeit = "tag";
 
-        const kopf = el("div", "mahlzeit-kopf");
-        kopf.appendChild(el("h3", "", t(mahlzeit)));
-        kopf.appendChild(el("span", "", format(summe(aktuellesDatum, mahlzeit).kcal) + " kcal"));
-        box.appendChild(kopf);
+    const kopf = el("div", "mahlzeit-kopf");
+    kopf.appendChild(el("h3", "", t("heuteGegessen")));
+    kopf.appendChild(el("span", "", format(summe(aktuellesDatum).kcal) + " kcal"));
+    box.appendChild(kopf);
 
-        const liste = el("div", "eintraege");
-        eintraegeVon(aktuellesDatum)
-            .filter(function (e) { return e.mahlzeit === mahlzeit; })
-            .forEach(function (eintrag) {
-                const karte = eintragKarte(eintrag);
-                if (karte) liste.appendChild(karte);
-            });
-        box.appendChild(liste);
-
-        const hinzu = el("button", "knopf-hinzu", t("lmPlus"));
-        hinzu.type = "button";
-        hinzu.addEventListener("click", function () { oeffneAuswahl(mahlzeit); });
-        box.appendChild(hinzu);
-
-        // Ablegen beim Ziehen (Computer)
-        box.addEventListener("dragover", function (ereignis) {
-            ereignis.preventDefault();
-            ereignis.dataTransfer.dropEffect = "copy";
-            box.classList.add("ziel");
-        });
-        box.addEventListener("dragleave", function (ereignis) {
-            if (!box.contains(ereignis.relatedTarget)) box.classList.remove("ziel");
-        });
-        box.addEventListener("drop", function (ereignis) {
-            ereignis.preventDefault();
-            box.classList.remove("ziel");
-            const id = ereignis.dataTransfer.getData("text/plain");
-            if (id) eintragHinzufuegen(id, mahlzeit);
-        });
-
-        bereich.appendChild(box);
+    const liste = el("div", "eintraege");
+    const eintraege = eintraegeVon(aktuellesDatum);
+    eintraege.forEach(function (eintrag) {
+        const karte = eintragKarte(eintrag);
+        if (karte) liste.appendChild(karte);
     });
+    if (eintraege.length === 0) liste.appendChild(el("p", "leer klein", t("tagLeer")));
+    box.appendChild(liste);
+
+    // Ablegen beim Ziehen (Computer)
+    box.addEventListener("dragover", function (ereignis) {
+        ereignis.preventDefault();
+        ereignis.dataTransfer.dropEffect = "copy";
+        box.classList.add("ziel");
+    });
+    box.addEventListener("dragleave", function (ereignis) {
+        if (!box.contains(ereignis.relatedTarget)) box.classList.remove("ziel");
+    });
+    box.addEventListener("drop", function (ereignis) {
+        ereignis.preventDefault();
+        box.classList.remove("ziel");
+        const id = ereignis.dataTransfer.getData("text/plain");
+        if (id) eintragHinzufuegen(id);
+    });
+
+    bereich.appendChild(box);
+    zeichneSchnellwahl();
+    zeichneTagTreffer();
+    if (typeof zeichneSportTag === "function") zeichneSportTag();
+}
+
+// Schnellwahl: Favoriten + zuletzt gegessen – ein Tipp trägt ein
+function zeichneSchnellwahl() {
+    const leiste = $("schnellwahl");
+    leiste.innerHTML = "";
+    const ids = [];
+    function dazu(id) { if (ids.indexOf(id) === -1 && findeLebensmittel(id)) ids.push(id); }
+    daten.lebensmittel.forEach(function (lm) { if (lm.favorit) dazu(lm.id); });
+    // zuletzt gegessen: die neuesten Tage zuerst
+    Object.keys(daten.plan).sort().reverse().slice(0, 14).forEach(function (datum) {
+        daten.plan[datum].slice().reverse().forEach(function (e) { dazu(e.lebensmittelId); });
+    });
+    ids.slice(0, 12).forEach(function (id) {
+        const lm = findeLebensmittel(id);
+        const chip = el("button", "schnell-chip");
+        chip.type = "button";
+        chip.appendChild(el("span", "", lm.emoji || "🍽️"));
+        chip.appendChild(el("span", "schnell-name", anzeigeName(lm)));
+        chip.setAttribute("aria-label", t("schnellDazu", { name: anzeigeName(lm) }));
+        chip.addEventListener("click", function () { eintragHinzufuegen(id); });
+        leiste.appendChild(chip);
+    });
+    leiste.hidden = ids.length === 0 || !!$("tagSuche").value.trim();
+}
+
+// Treffer der Suchleiste oben in "Mein Tag": ein Tipp = eingetragen
+function zeichneTagTreffer() {
+    const box = $("tagTreffer");
+    const text = $("tagSuche").value;
+    box.innerHTML = "";
+    if (!text.trim()) { box.hidden = true; return; }
+    box.hidden = false;
+
+    const treffer = gefilterteLebensmittel(text, "alle");
+    treffer.slice(0, 8).forEach(function (lm) {
+        const zeile = el("button", "lm-karte");
+        zeile.type = "button";
+        zeile.appendChild(bildElement(lm, "klein"));
+        const info = el("div", "lm-info");
+        const name = el("div", "lm-name", anzeigeName(lm));
+        if (lm.favorit) name.appendChild(el("span", "stern", " ★"));
+        info.appendChild(name);
+        info.appendChild(el("div", "lm-werte", werteText(lm)));
+        zeile.appendChild(info);
+        zeile.appendChild(el("span", "knopf-icon klein", "＋"));
+        zeile.addEventListener("click", function () { tagSucheFertig(lm); });
+        box.appendChild(zeile);
+    });
+    if (treffer.length > 8) box.appendChild(el("p", "leer klein", t("mehrTreffer", { anzahl: treffer.length - 8 })));
+
+    if (treffer.length === 0) {
+        const neu = el("button", "knopf-zweit", t("anlegen", { name: text.trim() }));
+        neu.type = "button";
+        neu.addEventListener("click", function () {
+            nachFormularSpeichern = function (neuesLm) { tagSucheFertig(neuesLm); };
+            oeffneFormular(null, text.trim());
+        });
+        box.appendChild(neu);
+    }
+    if (text.trim().length >= 2) {
+        box.appendChild(onlineKasten(text, function (lm) { allesZeichnen(); tagSucheFertig(lm); }));
+    }
+}
+
+// Gewählt → eintragen, Suche leeren
+function tagSucheFertig(lm) {
+    $("tagSuche").value = "";
+    eintragHinzufuegen(lm.id);
 }
 
 
@@ -480,6 +546,7 @@ function zeichnePlan() {
 // =====================================================
 
 function eintragHinzufuegen(lebensmittelId, mahlzeit) {
+    mahlzeit = mahlzeit || "tag"; // seit Version 2.0 gibt es nur noch "Mein Tag"
     const lm = findeLebensmittel(lebensmittelId);
     if (!lm) return;
     if (!daten.plan[aktuellesDatum]) daten.plan[aktuellesDatum] = [];
@@ -493,7 +560,7 @@ function eintragHinzufuegen(lebensmittelId, mahlzeit) {
     speichern();
     zeichneZusammenfassung();
     zeichnePlan();
-    zeigeMeldung(t("hinzugefuegt", { name: anzeigeName(lm), mahlzeit: t(mahlzeit) }));
+    zeigeMeldung(t("hinzugefuegtTag", { name: anzeigeName(lm) }));
 }
 
 function findeEintrag(id) {
@@ -655,15 +722,13 @@ function oeffneAktionen(id) {
 
     const knoepfe = $("aktionenMahlzeiten");
     knoepfe.innerHTML = "";
-    MAHLZEITEN.forEach(function (mahlzeit) {
-        const knopf = el("button", "", t(mahlzeit));
-        knopf.type = "button";
-        knopf.addEventListener("click", function () {
-            eintragHinzufuegen(id, mahlzeit);
-            schliesseFenster("dialogAktionen");
-        });
-        knoepfe.appendChild(knopf);
+    const knopf = el("button", "knopf-primaer", t("zuMeinemTag"));
+    knopf.type = "button";
+    knopf.addEventListener("click", function () {
+        eintragHinzufuegen(id);
+        schliesseFenster("dialogAktionen");
     });
+    knoepfe.appendChild(knopf);
 
     oeffneFenster("dialogAktionen");
 }
@@ -1120,15 +1185,13 @@ function oeffneAnsicht(id) {
         : t("planDatum", { datum: datumBeschriftung(aktuellesDatum) });
     const knoepfe = $("ansichtMahlzeiten");
     knoepfe.innerHTML = "";
-    MAHLZEITEN.forEach(function (mahlzeit) {
-        const knopf = el("button", "", t(mahlzeit));
-        knopf.type = "button";
-        knopf.addEventListener("click", function () {
-            eintragHinzufuegen(id, mahlzeit);
-            schliesseFenster("dialogAnsicht");
-        });
-        knoepfe.appendChild(knopf);
+    const knopf = el("button", "knopf-primaer", t("zuMeinemTag"));
+    knopf.type = "button";
+    knopf.addEventListener("click", function () {
+        eintragHinzufuegen(id);
+        schliesseFenster("dialogAnsicht");
     });
+    knoepfe.appendChild(knopf);
 
     oeffneFenster("dialogAnsicht");
     $("dialogAnsicht").scrollTop = 0;
@@ -1481,6 +1544,27 @@ function verbinden() {
         oeffneScanner(function (lm) { allesZeichnen(); auswahlWaehlen(lm); });
     });
     scannerVerbinden();
+
+    // Suchleiste oben in "Mein Tag"
+    $("tagSuche").addEventListener("input", function () {
+        zeichneTagTreffer();
+        $("schnellwahl").hidden = !!$("tagSuche").value.trim() || !$("schnellwahl").children.length;
+    });
+    $("tagSuche").addEventListener("keydown", function (e) {
+        // Enter = ersten Treffer eintragen
+        if (e.key === "Enter") {
+            e.preventDefault();
+            const erster = gefilterteLebensmittel($("tagSuche").value, "alle")[0];
+            if (erster && $("tagSuche").value.trim()) tagSucheFertig(erster);
+        }
+        if (e.key === "Escape") { $("tagSuche").value = ""; zeichneTagTreffer(); zeichneSchnellwahl(); }
+    });
+    $("tagScan").addEventListener("click", function (e) {
+        e.preventDefault();
+        oeffneScanner(function (lm) { allesZeichnen(); eintragHinzufuegen(lm.id); });
+    });
+    $("knopfSport").addEventListener("click", function () { oeffneSport(); });
+    sportVerbinden();
 
     // Kochbuch-Ansicht
     $("ansichtBearbeiten").addEventListener("click", function () {

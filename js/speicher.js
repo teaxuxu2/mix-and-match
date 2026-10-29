@@ -73,11 +73,17 @@ function startLebensmittel(start) {
 }
 
 // Wie die Daten aussehen, wenn jemand die App zum allerersten Mal öffnet
+// Sport: Trainingstage, gespeicherte Übungen ("Blöcke") und ganze Trainings ("Pakete")
+function leererSport() {
+    return { tage: {}, bloecke: [], pakete: [] };
+}
+
 function leereDaten() {
     return {
         version: SPEICHER_VERSION,
         lebensmittel: STARTDATEN.map(startLebensmittel),
         plan: {},
+        sport: leererSport(),
         einstellungen: { zielKcal: 2200, zielProtein: 160, zielKh: 250, zielFett: 80, sprache: browserSprache() },
         bekannteStartIds: STARTDATEN.map(function (start) { return start.id; })
     };
@@ -178,6 +184,11 @@ function altesFormatUebernehmen(daten) {
 function migrieren(daten) {
     if (!Array.isArray(daten.lebensmittel)) daten.lebensmittel = [];
     if (!daten.plan || typeof daten.plan !== "object") daten.plan = {};
+    // Sport kam in Version 2.0 dazu: fehlt er, gibt es einen leeren Sport-Bereich
+    if (!daten.sport || typeof daten.sport !== "object") daten.sport = leererSport();
+    if (!daten.sport.tage || typeof daten.sport.tage !== "object") daten.sport.tage = {};
+    if (!Array.isArray(daten.sport.bloecke)) daten.sport.bloecke = [];
+    if (!Array.isArray(daten.sport.pakete)) daten.sport.pakete = [];
     const standard = leereDaten().einstellungen;
     daten.einstellungen = Object.assign({}, standard, daten.einstellungen || {});
 
@@ -303,6 +314,7 @@ function zuKompakt(daten) {
         startAenderungen: startAenderungen,
         eigene: eigene,
         plan: daten.plan,
+        sport: daten.sport,
         einstellungen: daten.einstellungen
     };
     if (daten.alteUebernommen) kompakt.alteUebernommen = daten.alteUebernommen;
@@ -337,6 +349,7 @@ function vonKompakt(kompakt) {
         version: kompakt.version,
         lebensmittel: lebensmittel.concat(kompakt.eigene || []),
         plan: kompakt.plan || {},
+        sport: kompakt.sport,
         einstellungen: kompakt.einstellungen || {},
         bekannteStartIds: bekannteStartIds,
         alteUebernommen: kompakt.alteUebernommen

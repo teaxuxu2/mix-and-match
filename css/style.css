@@ -1542,3 +1542,96 @@ body[data-tab="foods"] .bereich-plan {
 .scan-zeile .knopf-primaer { flex: none; }
 #scanNochmal { width: 100%; margin-top: 8px; }
 .scan-feld { display: block; font-size: 13px; color: var(--text-grau); }
+
+/* ===== Version 2.0: Mein Tag – Suchleiste oben + Sport-Knopf ===== */
+.tag-oben { display: flex; gap: 8px; align-items: stretch; margin-bottom: 8px; }
+.tag-suche { flex: 1; min-width: 0; }
+.knopf-sport {
+    flex: none; display: flex; align-items: center; gap: 6px;
+    padding: 0 16px; min-height: 46px; border-radius: 999px;
+    border: none; background: var(--akzent); color: var(--akzent-text);
+    font-weight: 700; font-size: 15px; cursor: pointer;
+}
+.knopf-sport:hover { filter: brightness(1.05); }
+.tag-treffer {
+    margin-bottom: 12px; padding: 8px; border-radius: var(--radius-gross);
+    background: var(--flaeche); border: 1px solid var(--rand);
+    display: flex; flex-direction: column; gap: 6px;
+}
+.tag-treffer .lm-karte { width: 100%; text-align: left; }
+.schnellwahl {
+    display: flex; gap: 8px; overflow-x: auto; padding: 2px 0 10px;
+    scrollbar-width: none; -webkit-overflow-scrolling: touch;
+}
+.schnellwahl::-webkit-scrollbar { display: none; }
+.schnellwahl[hidden] { display: none; }
+.schnell-chip {
+    flex: none; display: flex; align-items: center; gap: 6px; max-width: 200px;
+    padding: 8px 12px; border-radius: 999px; cursor: pointer;
+    background: var(--flaeche-hell); border: 1px solid var(--rand); color: var(--text); font-size: 14px;
+}
+.schnell-chip:hover, .schnell-chip:focus-visible { border-color: var(--akzent); }
+.schnell-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.leer.klein { padding: 10px 6px; font-size: 13px; }
+.mahlzeiten { display: block; }
+
+/* ===== Sport ===== */
+.sport-tag { margin-top: 12px; }
+.sport-liste { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.sport-eintrag { display: flex; align-items: center; gap: 6px; }
+.sport-zeile {
+    flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; width: 100%;
+    padding: 10px 12px; text-align: left; cursor: pointer;
+    background: var(--flaeche-hell); border: 1px solid var(--rand); border-radius: var(--radius); color: var(--text);
+}
+.sport-karte .sport-zeile { margin-bottom: 6px; }
+.sport-zeile:hover { border-color: var(--akzent); }
+.sport-icon { font-size: 22px; flex: none; }
+.sport-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.sport-info strong { font-size: 15px; overflow-wrap: anywhere; }
+.sport-info small { font-size: 12px; color: var(--text-grau); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sport-arten { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
+.sport-art {
+    display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 12px 6px;
+    background: var(--flaeche-hell); border: 1px solid var(--rand); border-radius: var(--radius);
+    color: var(--text); cursor: pointer; text-align: center;
+}
+.sport-art span { font-size: 26px; }
+.sport-art b { font-size: 14px; }
+.sport-art small { font-size: 11px; color: var(--text-grau); }
+.sport-art:hover { border-color: var(--akzent); }
+.knopf-zweit.breit { width: 100%; }
+.sport-paket { margin-top: 14px; }
+.block-titel { margin: 14px 0 8px; font-size: 14px; color: var(--text-grau); font-weight: 600; }
+.block-titel[hidden] { display: none; }
+.knopf-icon.sicher { width: auto; padding: 0 10px; color: var(--farbe-fehler); font-size: 12px; }
+
+/* Übung bearbeiten */
+#uebungName { margin-bottom: 12px; }
+.uebung-video { margin-bottom: 12px; }
+.video-hoch {
+    width: min(60%, 220px); aspect-ratio: 9 / 16; margin: 0 auto 10px;
+    border-radius: var(--radius); overflow: hidden; background: #000;
+}
+.video-hoch[hidden] { display: none; }
+.video-hoch video { width: 100%; height: 100%; object-fit: contain; display: block; }
+.video-knoepfe { display: flex; gap: 8px; flex-wrap: wrap; }
+.video-knoepfe > * { flex: 1; min-width: 140px; }
+.video-knoepfe [hidden] { display: none; }
+.saetze { display: flex; flex-direction: column; gap: 6px; }
+.satz-zeile { display: flex; align-items: center; gap: 6px; }
+.satz-nr { flex: none; width: 52px; font-size: 13px; color: var(--text-grau); }
+.satz-feld, .satz-text {
+    min-width: 0; min-height: 42px; padding: 0 10px;
+    background: var(--eingabe); border: 1px solid var(--rand); border-radius: 10px;
+    color: var(--text); outline: none; font-weight: 600;
+}
+.satz-feld { width: 56px; flex: none; text-align: center; }
+.satz-text { flex: 1; font-weight: 400; }
+.satz-feld:focus, .satz-text:focus { border-color: var(--akzent); }
+.satz-einheit { flex: none; font-size: 12px; color: var(--text-grau); }
+#uebungKraft[hidden], #uebungAusdauer[hidden] { display: none; }
+#uebungNotiz { margin-top: 12px; }
+#uebungLoeschen { width: 100%; margin-top: 8px; }
+#uebungLoeschen[hidden] { display: none; }
+.tag-treffer[hidden] { display: none; }
