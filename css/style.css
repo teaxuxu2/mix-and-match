@@ -1635,3 +1635,52 @@ body[data-tab="foods"] .bereich-plan {
 #uebungLoeschen { width: 100%; margin-top: 8px; }
 #uebungLoeschen[hidden] { display: none; }
 .tag-treffer[hidden] { display: none; }
+
+/* ===== Konto & Trainer ===== */
+.knopf-konto { font-size: 18px; position: relative; }
+.knopf-konto.angemeldet::after {
+    content: ""; position: absolute; right: 6px; bottom: 6px; width: 9px; height: 9px;
+    border-radius: 50%; background: var(--akzent); border: 2px solid var(--hintergrund);
+}
+.konto-inhalt { display: flex; flex-direction: column; gap: 10px; }
+.konto-tabs { display: flex; gap: 8px; }
+.konto-form { display: flex; flex-direction: column; gap: 10px; }
+.konto-sync { margin: 0; font-size: 12px; color: var(--text-grau); }
+.konto-inhalt .aktion { margin-top: 8px; }
+.trainer-zeile {
+    display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+    background: var(--flaeche-hell); border: 1px solid var(--rand); border-radius: var(--radius);
+}
+.trainer-zeile.offen { border-style: dashed; }
+.trainer-zeile .knopf-primaer, .trainer-zeile .knopf-zweit { flex: none; min-height: 40px; padding: 0 12px; }
+.trainer-uebung { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
+.schalter { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text); cursor: pointer; margin-top: 4px; }
+.schalter input { width: 20px; height: 20px; accent-color: var(--akzent); flex: none; }
+.einladecode {
+    display: inline-block; margin: 4px 0; padding: 4px 10px; border-radius: 8px;
+    background: var(--eingabe); border: 1px dashed var(--akzent); color: var(--akzent);
+    font-size: 20px; font-weight: 700; letter-spacing: 3px; width: fit-content;
+}
+.sport-arten.klein .sport-art { padding: 8px 4px; }
+.sport-arten.klein .sport-art span { font-size: 20px; }
+.trainer-summe { font-size: 13px; color: var(--akzent); margin: 8px 2px; }
+#trainerEssenBox { margin-top: 12px; }
+#trainerEssenBox[hidden] { display: none; }
+#dialogTrainer .datum-leiste { margin-bottom: 4px; }
+
+/* Vorschläge vom Trainer in "Mein Tag" */
+.vorschlaege { margin-bottom: 12px; }
+.vorschlaege[hidden] { display: none; }
+.vorschlag-karte { border-color: var(--akzent); border-style: dashed; }
+.vorschlag-zeile { display: flex; align-items: center; gap: 8px; padding: 8px 4px; }
+.vorschlag-ja { color: var(--akzent); font-size: 18px; }
+
+/* Schmale Handys: "Hinzufügen" nur als ＋, damit der Konto-Knopf Platz hat */
+@media (max-width: 440px) {
+    #knopfNeu [data-t="neu"] { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+    #knopfNeu { min-width: 46px; padding: 0 14px; font-size: 20px; }
+    .kopf-aktionen { gap: 6px; }
+}
+.knopf-icon.vorschlag-ja { color: var(--akzent); border-color: var(--akzent); }
+#trainerInhalt .trainer-zeile { margin-bottom: 8px; }
+#kontoCode::placeholder { text-transform: none; }

@@ -21,10 +21,11 @@ const SPORT_ARTEN = {
     ausdauer: { icon: "🏃" },
     schwimmen: { icon: "🏊" }
 };
-const VIDEO_MAX_MB = 80;
+const VIDEO_MAX_MB = 50; // so viel nimmt auch der Online-Speicher pro Video
 
 let uebungEntwurf = null;   // die Übung, die gerade bearbeitet wird
 let uebungBearbeiteId = null;
+let uebungZiel = null;      // gesetzt, wenn ein Trainer für jemand anderen einträgt (statt im eigenen Plan)
 
 // =====================================================
 // Video-Lager (IndexedDB)
@@ -135,7 +136,8 @@ function uebungKopie(u) {
         dauer: u.dauer || 0,
         distanz: u.distanz || 0,
         abschnitte: (u.abschnitte || []).map(function (a) { return { min: a.min || 0, text: a.text || "" }; }),
-        notiz: u.notiz || ""
+        notiz: u.notiz || "",
+        vomTrainer: !!u.vomTrainer
     };
 }
 
@@ -166,7 +168,7 @@ function zeichneSportTag() {
             zeile.type = "button";
             zeile.appendChild(el("span", "sport-icon", SPORT_ARTEN[u.art] ? SPORT_ARTEN[u.art].icon : "🏅"));
             const info = el("span", "sport-info");
-            info.appendChild(el("strong", "", u.name + (u.videoId ? " 🎬" : "")));
+            info.appendChild(el("strong", "", u.name + (u.videoId ? " 🎬" : "") + (u.vomTrainer ? " 👤" : "")));
             info.appendChild(el("small", "", uebungKurztext(u)));
             zeile.appendChild(info);
             zeile.addEventListener("click", function () { oeffneUebung(u.id); });
@@ -203,7 +205,7 @@ function zeichneSport() {
         knopf.type = "button";
         knopf.appendChild(el("span", "sport-icon", SPORT_ARTEN[u.art] ? SPORT_ARTEN[u.art].icon : "🏅"));
         const info = el("span", "sport-info");
-        info.appendChild(el("strong", "", u.name + (u.videoId ? " 🎬" : "")));
+        info.appendChild(el("strong", "", u.name + (u.videoId ? " 🎬" : "") + (u.vomTrainer ? " 👤" : "")));
         info.appendChild(el("small", "", uebungKurztext(u)));
         knopf.appendChild(info);
         knopf.addEventListener("click", function () { oeffneUebung(u.id); });
@@ -485,11 +487,17 @@ function zeichneUebungVideo() {
     $("uebungVideoKnopf").textContent = t(uebungEntwurf.videoId ? "videoErsetzen" : "videoHochladen");
     if (!uebungEntwurf.videoId) { box.hidden = true; return; }
     box.hidden = false;
-    videoLaden(uebungEntwurf.videoId).then(function (blob) {
-        if (!blob) { box.hidden = true; return; }
+    const id = uebungEntwurf.videoId;
+    // Liegt das Video nicht auf diesem Gerät (z. B. vom Trainer), aus dem Online-Speicher holen
+    const ausWolke = function () {
+        if (typeof wolkeVideoAdresse !== "function") { box.hidden = true; return; }
+        wolkeVideoAdresse(id).then(function (adresse) { video.src = adresse; }).catch(function () { box.hidden = true; });
+    };
+    videoLaden(id).then(function (blob) {
+        if (!blob) { ausWolke(); return; }
         videoAdresse = URL.createObjectURL(blob);
         video.src = videoAdresse;
-    }).catch(function () { box.hidden = true; });
+    }).catch(ausWolke);
 }
 
 function videoGewaehlt(datei) {
@@ -529,6 +537,15 @@ function uebungSpeichern() {
         .map(function (s) { return { wdh: s.wdh === "" ? 0 : s.wdh, gewicht: s.gewicht === "" ? 0 : s.gewicht }; });
     u.abschnitte = u.abschnitte.filter(function (a) { return (a.text || "").trim() || a.min; })
         .map(function (a) { return { min: a.min || 0, text: (a.text || "").trim() }; });
+
+    // Trainer trägt für eine Sportlerin ein → nicht im eigenen Plan speichern, sondern schicken
+    if (uebungZiel) {
+        const ziel = uebungZiel;
+        uebungZiel = null;
+        ziel(uebungKopie(u));
+        schliesseFenster("dialogUebung");
+        return;
+    }
 
     // Block (Bibliothek) anlegen oder auffrischen: gleicher Name + Art = gleiche Übung
     let block = u.blockId ? daten.sport.bloecke.find(function (b) { return b.id === u.blockId; }) : null;
@@ -620,6 +637,7 @@ function sportVerbinden() {
     $("uebungLoeschen").addEventListener("click", uebungLoeschen);
     $("dialogUebung").addEventListener("close", function () {
         $("uebungVideo").pause();
+        uebungZiel = null;
         // Neu hochgeladen, aber nicht gespeichert? Dann Video wieder wegräumen.
         if (uebungEntwurf) videoAufraeumen(uebungEntwurf.videoId);
         const knopf = $("uebungLoeschen");

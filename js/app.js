@@ -120,6 +120,8 @@ function speichern() {
     const ok = datenSpeichern(daten);
     if (!ok) {
         zeigeMeldung(t("speicherVoll"), true);
+    } else if (typeof wolkeMerken === "function") {
+        wolkeMerken(); // angemeldet? → kurz danach eine Kopie in den Online-Speicher
     }
     return ok;
 }
@@ -292,6 +294,14 @@ function gefilterteLebensmittel(text, mitFilter) {
         })
         .sort(function (a, b) {
             if (a.favorit !== b.favorit) return a.favorit ? -1 : 1;
+            // Beim Suchen: genauer Treffer zuerst, dann Namen, die mit dem Suchwort anfangen
+            if (such) {
+                const rang = function (lm) {
+                    const n = anzeigeName(lm).toLowerCase();
+                    return n === such ? 0 : n.indexOf(such) === 0 ? 1 : 2;
+                };
+                if (rang(a) !== rang(b)) return rang(a) - rang(b);
+            }
             return anzeigeName(a).localeCompare(anzeigeName(b), gebietsschema());
         });
 }
@@ -469,6 +479,7 @@ function zeichnePlan() {
     zeichneSchnellwahl();
     zeichneTagTreffer();
     if (typeof zeichneSportTag === "function") zeichneSportTag();
+    if (typeof zeichneVorschlaege === "function") zeichneVorschlaege();
 }
 
 // Schnellwahl: Favoriten + zuletzt gegessen – ein Tipp trägt ein
@@ -1565,6 +1576,7 @@ function verbinden() {
     });
     $("knopfSport").addEventListener("click", function () { oeffneSport(); });
     sportVerbinden();
+    kontoVerbinden();
 
     // Kochbuch-Ansicht
     $("ansichtBearbeiten").addEventListener("click", function () {

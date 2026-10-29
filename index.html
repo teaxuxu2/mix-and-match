@@ -44,6 +44,7 @@
             <button type="button" class="knopf-primaer" id="knopfNeu">
                 <span aria-hidden="true">＋</span> <span data-t="neu">Add Food</span>
             </button>
+            <button type="button" class="knopf-icon knopf-konto" id="knopfKonto" aria-label="Account" title="Account">👤</button>
             <button type="button" class="knopf-icon" id="knopfEinstellungen" data-t-aria="einstellungen" aria-label="Settings">⋮</button>
         </div>
     </header>
@@ -152,6 +153,7 @@
                 <div class="balken" id="balken"></div>
             </div>
 
+            <div id="trainerVorschlaege" class="vorschlaege" hidden></div>
             <div id="mahlzeiten" class="mahlzeiten"></div>
             <div id="sportTag" class="sport-tag"></div>
         </section>
@@ -332,6 +334,39 @@
         <p id="uebungFehler" class="fehler" role="alert"></p>
         <button type="button" class="knopf-primaer breit" id="uebungSpeichern" data-t="speichern">Save</button>
         <button type="button" class="aktion gefahr" id="uebungLoeschen" hidden>🗑 Delete</button>
+    </dialog>
+
+
+    <!-- ===== Fenster: Konto & Trainer ===== -->
+    <dialog id="dialogKonto" class="fenster">
+        <div class="fenster-kopf">
+            <h2 data-t="kontoTitel">Account &amp; coach</h2>
+            <button type="button" class="knopf-icon" data-schliessen data-t-aria="schliessen" aria-label="Close">✕</button>
+        </div>
+        <div id="kontoInhalt" class="konto-inhalt"></div>
+        <p id="kontoFehler" class="fehler" role="alert"></p>
+    </dialog>
+
+    <!-- ===== Fenster: Trainer sieht den Tag einer Sportlerin ===== -->
+    <dialog id="dialogTrainer" class="fenster">
+        <div class="fenster-kopf">
+            <h2 id="trainerTitel">Athlete</h2>
+            <button type="button" class="knopf-icon" data-schliessen data-t-aria="schliessen" aria-label="Close">✕</button>
+        </div>
+        <div class="datum-leiste">
+            <button type="button" class="knopf-pfeil" id="trainerZurueck" data-t-aria="tagZurueck" aria-label="Previous day">‹</button>
+            <span class="datum-text" id="trainerDatum">Today</span>
+            <button type="button" class="knopf-pfeil" id="trainerVor" data-t-aria="tagVor" aria-label="Next day">›</button>
+        </div>
+        <div id="trainerInhalt"></div>
+        <div id="trainerEssenBox" hidden>
+            <p class="unterzeile" data-t="essenVorschlagen">Suggest food (counts only after confirmation):</p>
+            <label class="suche">
+                <span aria-hidden="true">🔍</span>
+                <input id="trainerEssenSuche" type="search" data-t-ph="suche" placeholder="Search foods ..." autocomplete="off">
+            </label>
+            <div id="trainerEssenTreffer" class="sport-liste"></div>
+        </div>
     </dialog>
 
     <!-- ===== Fenster: Barcode-Scanner ===== -->
@@ -532,6 +567,9 @@
     <script src="js/online.js"></script>
     <script src="js/scanner.js"></script>
     <script src="js/sport.js"></script>
+    <script src="js/wolke-konfig.js"></script>
+    <script src="js/wolke.js"></script>
+    <script src="js/konto.js"></script>
     <script src="js/app.js"></script>
 </body>
 
