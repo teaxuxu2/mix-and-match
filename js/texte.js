@@ -212,6 +212,10 @@ const TEXTE = {
         fehlerZahlenZeit: "Please enter numbers only – time as 4:30 or in minutes.",
         // --- Version 3: neue Startseite, Leiste unten ---
         kennzahlen: "Today's totals",
+        stueckKurz: "pc",
+        scheibeKurz: "slice",
+        einheitWechseln: "Switch between grams and pieces",
+        ungefaehrGramm: "≈ {g} g",
         fuerAlle: "🌍 Save for everyone in the app",
         gemeinsamGespeichert: "🌍 {name} is now available for everyone",
         gemeinsamFehler: "Couldn't save for everyone – check your internet and try again.",
@@ -554,6 +558,10 @@ const TEXTE = {
         fehlerZahlenZeit: "Bitte nur Zahlen eingeben – Zeit als 4:30 oder in Minuten.",
         // --- Version 3: neue Startseite, Leiste unten ---
         kennzahlen: "Werte von heute",
+        stueckKurz: "Stk.",
+        scheibeKurz: "Scheibe",
+        einheitWechseln: "Zwischen Gramm und Stück wechseln",
+        ungefaehrGramm: "≈ {g} g",
         fuerAlle: "🌍 Für alle in der App speichern",
         gemeinsamGespeichert: "🌍 {name} ist jetzt für alle verfügbar",
         gemeinsamFehler: "Für alle speichern hat nicht geklappt – prüf dein Internet und versuch es nochmal.",

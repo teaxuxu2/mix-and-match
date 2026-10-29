@@ -1834,3 +1834,23 @@ body[data-tab="profil"] .tab[data-tab="profil"] .nav-icon { filter: none; }
 
 .gemeinsam-schalter { margin: 10px 2px 0; padding: 10px 12px; border: 1px dashed var(--akzent); border-radius: var(--radius); }
 .gemeinsam-schalter[hidden] { display: none; }
+
+/* Gramm ↔ Stück */
+.einheit-knopf {
+    flex: none; min-width: 34px; height: 28px; padding: 0 6px; margin-left: 2px;
+    border: 1px solid var(--akzent); border-radius: 8px; background: transparent;
+    color: var(--akzent); font-size: 13px; font-weight: 700; cursor: pointer;
+}
+.eintrag-gramm { font-size: 11px; color: var(--text-grau); margin-top: 2px; }
+
+/* ===== iPhone: nichts oben abschneiden ===== */
+/* Als Web-App (Home-Bildschirm) liegt die Statusleiste über der Seite → Platz lassen */
+body { padding-top: max(16px, env(safe-area-inset-top)); }
+/* Fenster nie höher als der sichtbare Bereich (auch wenn die Tastatur offen ist) */
+.fenster {
+    max-height: calc(var(--sichtbar, 100dvh) - env(safe-area-inset-top) - 12px);
+    overscroll-behavior: contain;
+}
+/* Trefferliste der Suche: eigene Scrollfläche statt die ganze Seite zu verschieben */
+.tag-treffer { max-height: 52vh; overflow-y: auto; overscroll-behavior: contain; }
+html { -webkit-text-size-adjust: 100%; }

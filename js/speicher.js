@@ -66,6 +66,7 @@ function startLebensmittel(start) {
         mahlzeit: start.mahlzeit || undefined,
         rezept: start.rezept ? JSON.parse(JSON.stringify(start.rezept)) : undefined,
         anleitung: start.anleitung ? Object.assign({}, start.anleitung) : undefined,
+        stueck: start.stueck ? Object.assign({}, start.stueck) : undefined,
         favorit: Boolean(start.favorit),
         eigenes: false,
         letzteGramm: start.rezept ? portionAusRezept(start.rezept) : (start.portion || 100)
@@ -289,6 +290,7 @@ function migrieren(daten) {
             lm.name = start.en;
         }
         if (start) {
+            if (start.stueck) lm.stueck = Object.assign({}, start.stueck); else delete lm.stueck;
             lm.marke = start.marke || null;
             lm.laden = start.laden || null;
             // Korrigierte Werte aus der Datenbank übernehmen – außer die Person hat sie selbst geändert

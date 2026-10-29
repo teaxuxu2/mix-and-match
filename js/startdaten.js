@@ -694,6 +694,23 @@ const STARTDATEN = [
     { id: "off-4099200105291", seit: 8, emoji: "🥦", de: "Nature's Gold Pfannengemüse", en: "Nature's Gold Pan Vegetables", marke: "Nature's Gold", laden: "Hofer", kcal100: 76, protein100: 2.6, kh100: 7.3, fett100: 3.4, quelle: "openfoodfacts:4099200105291" }
 ];
 
+// Wie viel wiegt EIN Stück bzw. eine Scheibe? (Durchschnitt, essbarer Anteil; Basis USDA "medium"/Packungsangaben)
+// Damit kann man im Tagesplan auch "2 Stk. Ei" statt "100 g" eintragen.
+const STUECK_GEWICHTE = {
+    "start-egg": [50, "stueck"], "start-egg-raw": [50, "stueck"],
+    "start-banana": [118, "stueck"], "start-apple": [182, "stueck"], "start-orange": [131, "stueck"],
+    "start-kiwi": [69, "stueck"], "start-tomato": [123, "stueck"], "start-avocado": [136, "stueck"],
+    "start-mango": [200, "stueck"], "usda-pear": [178, "stueck"], "usda-peach": [150, "stueck"],
+    "usda-nectarine": [142, "stueck"], "usda-plum": [40, "stueck"],
+    "start-ricecake": [8, "scheibe"], "start-bread": [50, "scheibe"], "usda-toast": [25, "scheibe"],
+    "usda-crispbread": [10, "scheibe"], "usda-kaisersemmel": [55, "stueck"],
+    "start-wrap": [60, "stueck"], "start-proteinbar": [50, "stueck"]
+};
+STARTDATEN.forEach(function (eintrag) {
+    const s = STUECK_GEWICHTE[eintrag.id];
+    if (s && !eintrag.stueck) eintrag.stueck = { g: s[0], art: s[1] };
+});
+
 // Schnelles Nachschlagen per id: STARTDATEN_NACH_ID["start-oats"] → Haferflocken
 const STARTDATEN_NACH_ID = {};
 STARTDATEN.forEach(function (eintrag) {

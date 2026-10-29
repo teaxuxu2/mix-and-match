@@ -283,38 +283,107 @@ function lebensmittelKarte(lm) {
 
 // Welche Lebensmittel passen zu Suche + Filter? Favoriten zuerst, dann alphabetisch.
 // Gesucht wird in beiden Sprachen: "oats" und "hafer" finden beide Haferflocken.
+// ---------- Tolerante Suche ----------
+// Findet auch bei Mehrzahl ("Eier" → Ei), Umlauten ("aepfel" → Äpfel) und kleinen Tippfehlern ("bananne").
+// Wohnhaus-Bild: ein Portier, der Bewohner auch erkennt, wenn man den Namen nicht ganz richtig sagt.
+function suchNormal(text) {
+    return String(text || "").toLowerCase()
+        .replace(/ä/g, "a").replace(/ö/g, "o").replace(/ü/g, "u").replace(/ß/g, "ss")
+        .replace(/ae/g, "a").replace(/oe/g, "o").replace(/ue/g, "u")
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9%]+/g, " ").trim();
+}
+
+// Wortstamm: typische deutsche/englische Endungen weg ("eier" → "ei", "bananen" → "banan", "apples" → "appl")
+function suchStamm(wort) {
+    if (wort.length <= 3) return wort;
+    const endungen = ["innen", "chen", "ern", "en", "er", "es", "e", "n", "s"];
+    for (let i = 0; i < endungen.length; i++) {
+        const e = endungen[i];
+        if (wort.length - e.length >= 2 && wort.slice(-e.length) === e) return wort.slice(0, -e.length);
+    }
+    return wort;
+}
+
+// Wie viele Tippfehler zwischen zwei Wörtern? (Einfügen, Löschen, Ersetzen, Vertauschen)
+function tippAbstand(a, b, grenze) {
+    if (Math.abs(a.length - b.length) > grenze) return grenze + 1;
+    const d = [];
+    for (let i = 0; i <= a.length; i++) { d[i] = [i]; }
+    for (let j = 0; j <= b.length; j++) { d[0][j] = j; }
+    for (let i = 1; i <= a.length; i++) {
+        let zeilenMin = Infinity;
+        for (let j = 1; j <= b.length; j++) {
+            const kosten = a[i - 1] === b[j - 1] ? 0 : 1;
+            d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + kosten);
+            if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1);
+            zeilenMin = Math.min(zeilenMin, d[i][j]);
+        }
+        if (zeilenMin > grenze) return grenze + 1;
+    }
+    return d[a.length][b.length];
+}
+
+// Punkte für ein Suchwort gegen einen Namen: 5 = genau, 4 = Wortanfang, 3 = enthalten, 2 = Wortstamm, 1 = Tippfehler, 0 = nein
+function wortPunkte(suchwort, name, nameWoerter) {
+    if (nameWoerter.indexOf(suchwort) !== -1) return 5;
+    if (nameWoerter.some(function (w) { return w.indexOf(suchwort) === 0; })) return 4;
+    if (name.indexOf(suchwort) !== -1 || name.replace(/ /g, "").indexOf(suchwort) !== -1) return 3;
+    const stamm = suchStamm(suchwort);
+    if (stamm.length >= 2 && nameWoerter.some(function (w) { return w.indexOf(stamm) === 0 || suchStamm(w) === stamm; })) return 2;
+    if (suchwort.length >= 4) {
+        const grenze = suchwort.length >= 8 ? 2 : 1;
+        if (nameWoerter.some(function (w) {
+            return w.length >= 3 && (tippAbstand(suchwort, w, grenze) <= grenze ||
+                (w.length > suchwort.length && tippAbstand(suchwort, w.slice(0, suchwort.length), grenze) <= grenze));
+        })) return 1;
+    }
+    return 0;
+}
+
+// Gesamtpunkte eines Lebensmittels für einen Suchtext (alle Wörter müssen passen)
+function suchPunkte(lm, suchWoerter, suchGanz) {
+    const creator = lm.influencer ? findeCreator(lm.influencer) : null;
+    const namen = [lm.name, lm.marke, lm.laden, creator && creator.handle, creator && creator.name]
+        .concat(lm.namen ? [lm.namen.en, lm.namen.de] : []).filter(Boolean).map(suchNormal);
+    const alle = namen.join(" ");
+    const alleWoerter = alle.split(" ");
+    // ganzer Suchtext ohne Leerzeichen ("mandeldrink" findet "Mandel Drink")
+    if (suchGanz.length >= 3 && alle.replace(/ /g, "").indexOf(suchGanz.replace(/ /g, "")) !== -1 && suchWoerter.length > 1) return 3 * suchWoerter.length;
+    let summe = 0;
+    for (let i = 0; i < suchWoerter.length; i++) {
+        const p = wortPunkte(suchWoerter[i], alle, alleWoerter);
+        if (!p) return 0;
+        summe += p;
+    }
+    return summe;
+}
+
+// Welche Lebensmittel passen zu Suche + Filter? Favoriten zuerst, beste Treffer oben, dann alphabetisch.
+// Gesucht wird in beiden Sprachen: "oats" und "hafer" finden beide Haferflocken.
 function gefilterteLebensmittel(text, mitFilter) {
-    const such = text.trim().toLowerCase();
+    const such = suchNormal(text);
+    const suchWoerter = such ? such.split(" ") : [];
+    const punkte = {};
     return daten.lebensmittel
         .filter(function (lm) {
-            if (such) {
-                // Gesucht wird in beiden Namen, in der Marke und im Geschäft ("hofer", "milbona" ...)
-                const creator = lm.influencer ? findeCreator(lm.influencer) : null;
-                const namen = [lm.name, lm.marke, lm.laden, creator && creator.handle, creator && creator.name]
-                    .concat(lm.namen ? [lm.namen.en, lm.namen.de] : []);
-                // Leerzeichen zählen nicht: "mandeldrink" findet auch "Mandel Drink"
-                const suchOhne = such.replace(/\s+/g, "");
-                const passt = namen.some(function (n) {
-                    if (!n) return false;
-                    const klein = n.toLowerCase();
-                    return klein.includes(such) || klein.replace(/\s+/g, "").includes(suchOhne);
-                });
-                if (!passt) return false;
-            }
             if (mitFilter === "favoriten" && !lm.favorit) return false;
             if (mitFilter === "eigene" && !lm.eigenes) return false;
             if (mitFilter === "rezepte" && !lm.rezept) return false;
-            return true;
+            if (!such) return true;
+            punkte[lm.id] = suchPunkte(lm, suchWoerter, such);
+            return punkte[lm.id] > 0;
         })
         .sort(function (a, b) {
             if (a.favorit !== b.favorit) return a.favorit ? -1 : 1;
-            // Beim Suchen: genauer Treffer zuerst, dann Namen, die mit dem Suchwort anfangen
             if (such) {
+                // genauer Name zuerst, dann Name beginnt mit dem Suchwort, dann nach Punkten
                 const rang = function (lm) {
-                    const n = anzeigeName(lm).toLowerCase();
+                    const n = suchNormal(anzeigeName(lm));
                     return n === such ? 0 : n.indexOf(such) === 0 ? 1 : 2;
                 };
                 if (rang(a) !== rang(b)) return rang(a) - rang(b);
+                if (punkte[a.id] !== punkte[b.id]) return punkte[b.id] - punkte[a.id];
             }
             return anzeigeName(a).localeCompare(anzeigeName(b), gebietsschema());
         });
@@ -399,10 +468,24 @@ function eintragKarte(eintrag) {
     const eingabe = el("input");
     eingabe.type = "text";
     eingabe.inputMode = "decimal";
-    eingabe.value = feldWert(eintrag.gramm);
+    // Stück statt Gramm? (z. B. 2 Stk. Ei) – gespeichert wird immer in Gramm
+    const stueck = lm.stueck && eintrag.einheit === "stueck" ? lm.stueck : null;
+    const schritt = stueck ? stueck.g : 10;
+    eingabe.value = stueck ? feldWert(Math.round(eintrag.gramm / stueck.g * 2) / 2) : feldWert(eintrag.gramm);
     eingabe.setAttribute("aria-label", t("grammVon", { name: name }));
     feld.appendChild(eingabe);
-    feld.appendChild(el("span", "", "g"));
+    if (lm.stueck) {
+        const einheit = el("button", "einheit-knopf", stueck ? t(stueck.art === "scheibe" ? "scheibeKurz" : "stueckKurz") : "g");
+        einheit.type = "button";
+        einheit.setAttribute("aria-label", t("einheitWechseln"));
+        einheit.addEventListener("click", function (e) {
+            e.preventDefault();
+            einheitWechseln(eintrag.id);
+        });
+        feld.appendChild(einheit);
+    } else {
+        feld.appendChild(el("span", "", "g"));
+    }
     const plus = el("button", "rund plus", "+");
     plus.type = "button";
     plus.setAttribute("aria-label", t("mehr") + " " + name);
@@ -417,9 +500,10 @@ function eintragKarte(eintrag) {
     entfernen.setAttribute("aria-label", t("entfernen", { name: name }));
     karte.appendChild(entfernen);
 
-    minus.addEventListener("click", function () { mengeAendern(eintrag.id, eintrag.gramm - 10); });
-    plus.addEventListener("click", function () { mengeAendern(eintrag.id, eintrag.gramm + 10); });
-    eingabe.addEventListener("change", function () { mengeAendern(eintrag.id, zahl(eingabe.value)); });
+    minus.addEventListener("click", function () { mengeAendern(eintrag.id, eintrag.gramm - schritt); });
+    plus.addEventListener("click", function () { mengeAendern(eintrag.id, eintrag.gramm + schritt); });
+    eingabe.addEventListener("change", function () { mengeAendern(eintrag.id, zahl(eingabe.value) * (stueck ? stueck.g : 1)); });
+    if (stueck) info.appendChild(el("div", "eintrag-gramm", t("ungefaehrGramm", { g: format(eintrag.gramm) })));
     eingabe.addEventListener("keydown", function (e) { if (e.key === "Enter") eingabe.blur(); });
     entfernen.addEventListener("click", function () { eintragEntfernen(eintrag.id); });
 
@@ -555,7 +639,8 @@ function eintragHinzufuegen(lebensmittelId, mahlzeit) {
         id: neueId(),
         mahlzeit: mahlzeit,
         lebensmittelId: lebensmittelId,
-        gramm: lm.letzteGramm || 100
+        gramm: lm.letzteGramm || 100,
+        einheit: lm.stueck && lm.letzteEinheit === "stueck" ? "stueck" : undefined
     });
     speichern();
     zeichneZusammenfassung();
@@ -570,12 +655,31 @@ function findeEintrag(id) {
 function mengeAendern(eintragId, neueGramm) {
     const eintrag = findeEintrag(eintragId);
     if (!eintrag) return;
-    if (!(neueGramm > 0)) neueGramm = eintrag.gramm > 10 ? eintrag.gramm : 10; // nie 0 oder negativ
+    const lmStueck = findeLebensmittel(eintrag.lebensmittelId);
+    const minimum = lmStueck && lmStueck.stueck && eintrag.einheit === "stueck" ? lmStueck.stueck.g / 2 : 10;
+    if (!(neueGramm > 0) || neueGramm < minimum) neueGramm = eintrag.gramm > minimum ? eintrag.gramm : minimum; // nie 0 oder negativ
     neueGramm = Math.min(Math.round(neueGramm * 10) / 10, 5000);
 
     eintrag.gramm = neueGramm;
     const lm = findeLebensmittel(eintrag.lebensmittelId);
     if (lm) lm.letzteGramm = neueGramm; // nächstes Mal diese Menge vorschlagen
+    speichern();
+    zeichneZusammenfassung();
+    zeichnePlan();
+}
+
+// Zwischen Gramm und Stück umschalten (die App merkt sich die Wahl für dieses Lebensmittel)
+function einheitWechseln(eintragId) {
+    const eintrag = findeEintrag(eintragId);
+    const lm = eintrag ? findeLebensmittel(eintrag.lebensmittelId) : null;
+    if (!lm || !lm.stueck) return;
+    eintrag.einheit = eintrag.einheit === "stueck" ? "g" : "stueck";
+    if (eintrag.einheit === "stueck") {
+        // auf ganze Stück runden (mindestens 1)
+        eintrag.gramm = Math.max(1, Math.round(eintrag.gramm / lm.stueck.g)) * lm.stueck.g;
+    }
+    lm.letzteEinheit = eintrag.einheit;
+    lm.letzteGramm = eintrag.gramm;
     speichern();
     zeichneZusammenfassung();
     zeichnePlan();
@@ -1688,6 +1792,16 @@ function verbinden() {
 rezepteNeuBerechnen(); // falls sich Werte von Zutaten geändert haben (z. B. Datenbank-Korrektur)
 verbinden();
 gemeinsamAktualisieren(); // neue Lebensmittel/Rezepte "für alle" holen
+
+// iPhone: Höhe des wirklich sichtbaren Bereichs merken (Tastatur offen → kleiner),
+// damit Fenster nicht oben aus dem Bild rutschen
+(function () {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const setzen = function () { document.documentElement.style.setProperty("--sichtbar", Math.round(vv.height) + "px"); };
+    vv.addEventListener("resize", setzen);
+    setzen();
+})();
 
 // Als Web-App: Notvorrat anlegen, damit sie auch offline startet (nicht in automatischen Tests)
 if ("serviceWorker" in navigator && location.protocol === "https:" && !navigator.webdriver) {

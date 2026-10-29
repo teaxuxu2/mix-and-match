@@ -29,6 +29,25 @@ function offHolen(adresse) {
         .finally(function () { clearTimeout(timer); });
 }
 
+// Suche über die Funktion off_suche in Supabase (siehe supabase/gemeinsam.sql)
+function wolkeOffSuche(text, sprache) {
+    if (typeof WOLKE_KONFIG === "undefined" || !WOLKE_KONFIG.url) return Promise.reject(new Error("keine Wolke"));
+    const abbruch = typeof AbortController !== "undefined" ? new AbortController() : null;
+    const timer = setTimeout(function () { if (abbruch) abbruch.abort(); }, OFF_WARTEZEIT);
+    return fetch(WOLKE_KONFIG.url + "/rest/v1/rpc/off_suche", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", apikey: WOLKE_KONFIG.anonSchluessel, Authorization: "Bearer " + WOLKE_KONFIG.anonSchluessel },
+        body: JSON.stringify({ suchtext: text, sprache: sprache }),
+        signal: abbruch ? abbruch.signal : undefined
+    }).then(function (antwort) {
+        if (!antwort.ok) throw new Error("HTTP " + antwort.status);
+        return antwort.json();
+    }).then(function (treffer) {
+        if (!Array.isArray(treffer) || !treffer.length) throw new Error("leer"); // nichts → anderen Weg probieren
+        return treffer;
+    }).finally(function () { clearTimeout(timer); });
+}
+
 // Macht aus einem Open-Food-Facts-Produkt ein einfaches Objekt – oder null, wenn Werte fehlen
 function offProduktLesen(p) {
     if (!p) return null;
@@ -71,9 +90,14 @@ function onlineSuchen(text) {
             .filter(Boolean);
         const q = woerter.join(" AND ");
         const sprache = daten.einstellungen.sprache === "de" ? "de,en" : "en,de";
-        anfrage = offHolen("https://search.openfoodfacts.org/search?q=" + encodeURIComponent(q) +
-                "&langs=" + sprache + "&page_size=30&fields=" + OFF_FELDER)
-            .then(function (j) { return j.hits || []; })
+        // 1. Weg: über unseren eigenen Online-Speicher (der darf Open Food Facts fragen)
+        anfrage = wolkeOffSuche(such, sprache)
+            .catch(function () {
+                // 2. Weg: direkt (klappt nur, wenn Open Food Facts es erlaubt)
+                return offHolen("https://search.openfoodfacts.org/search?q=" + encodeURIComponent(q) +
+                        "&langs=" + sprache + "&page_size=30&fields=" + OFF_FELDER)
+                    .then(function (j) { return j.hits || []; });
+            })
             .catch(function () {
                 // Plan B: die klassische Suche von Open Food Facts
                 return offHolen("https://world.openfoodfacts.org/cgi/search.pl?search_terms=" + encodeURIComponent(such) +
