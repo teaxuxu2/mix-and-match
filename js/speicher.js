@@ -75,7 +75,72 @@ function startLebensmittel(start) {
 // Wie die Daten aussehen, wenn jemand die App zum allerersten Mal öffnet
 // Sport: Trainingstage, gespeicherte Übungen ("Blöcke") und ganze Trainings ("Pakete")
 function leererSport() {
-    return { tage: {}, bloecke: [], pakete: [] };
+    return { tage: {}, sessionNamen: {}, bloecke: [], pakete: [] };
+}
+
+// ---------- Übungen (seit Version 2.2: eine Art mit frei wählbaren Feldern) ----------
+// { name, felder: ["wdh","kg","m","zeit","text"], saetze: [{ wdh, gewicht, meter, sek, text }],
+//   videoId, notiz, blockId, vomTrainer }
+// Ältere Übungen (art: kraft / ausdauer / schwimmen) werden hier umgebaut.
+const UEBUNG_FELDER = ["wdh", "kg", "m", "zeit", "text"];
+
+function uebungNormalisieren(u) {
+    u = u || {};
+    const neu = {
+        name: String(u.name || "").slice(0, 60),
+        felder: [],
+        saetze: [],
+        videoId: u.videoId || null,
+        notiz: u.notiz || "",
+        blockId: u.blockId || null,
+        vomTrainer: !!u.vomTrainer
+    };
+    const zahlOderLeer = function (v) { return v === "" || v === null || v === undefined || isNaN(Number(v)) ? "" : Number(v); };
+    if (Array.isArray(u.felder)) {
+        neu.felder = u.felder.filter(function (f) { return UEBUNG_FELDER.indexOf(f) !== -1; });
+        neu.saetze = (u.saetze || []).map(function (z) {
+            return { wdh: zahlOderLeer(z.wdh), gewicht: zahlOderLeer(z.gewicht), meter: zahlOderLeer(z.meter),
+                     sek: zahlOderLeer(z.sek), text: String(z.text || "").slice(0, 60) };
+        });
+    } else if (u.art === "ausdauer" || u.art === "schwimmen") {
+        // Alte Ausdauer/Schwimmen-Übung: Abschnitte werden zu Sätzen
+        const abschnitte = (u.abschnitte || []).filter(function (a) { return a.min || a.text; });
+        const meterGesamt = u.art === "schwimmen" ? (Number(u.distanz) || 0) : (Number(u.distanz) || 0) * 1000;
+        if (abschnitte.length) {
+            neu.felder = u.art === "schwimmen" ? ["text"] : ["zeit", "text"];
+            neu.saetze = abschnitte.map(function (a) {
+                return { wdh: "", gewicht: "", meter: "", sek: a.min ? Math.round(a.min * 60) : "", text: a.text || "" };
+            });
+            const gesamt = [];
+            if (u.dauer) gesamt.push(u.dauer + " min");
+            if (meterGesamt) gesamt.push(meterGesamt + " m");
+            if (gesamt.length) neu.notiz = (neu.notiz ? neu.notiz + " · " : "") + gesamt.join(", ");
+        } else {
+            neu.felder = ["m", "zeit"];
+            neu.saetze = [{ wdh: "", gewicht: "", meter: meterGesamt || "", sek: u.dauer ? Math.round(u.dauer * 60) : "", text: "" }];
+        }
+    } else {
+        // Alte Kraft-Übung (oder unbekannt): Wiederholungen × Gewicht
+        neu.felder = ["wdh", "kg"];
+        neu.saetze = (u.saetze || []).map(function (z) {
+            return { wdh: zahlOderLeer(z.wdh), gewicht: zahlOderLeer(z.gewicht), meter: "", sek: "", text: "" };
+        });
+    }
+    if (!neu.felder.length) neu.felder = ["wdh", "kg"];
+    return neu;
+}
+
+// Alle Übungen in Tagen, Blöcken und Sessions auf das neue Format bringen (ids bleiben)
+function sportNormalisieren(sport) {
+    const mitId = function (u) { const n = uebungNormalisieren(u); if (u && u.id) n.id = u.id; return n; };
+    Object.keys(sport.tage).forEach(function (d) {
+        if (!Array.isArray(sport.tage[d])) { delete sport.tage[d]; return; }
+        sport.tage[d] = sport.tage[d].map(mitId);
+    });
+    sport.bloecke = sport.bloecke.map(mitId);
+    sport.pakete = sport.pakete.map(function (p) {
+        return { id: p.id || neueId(), name: String(p.name || "").slice(0, 40), uebungen: (p.uebungen || []).map(uebungNormalisieren) };
+    });
 }
 
 function leereDaten() {
@@ -189,6 +254,8 @@ function migrieren(daten) {
     if (!daten.sport.tage || typeof daten.sport.tage !== "object") daten.sport.tage = {};
     if (!Array.isArray(daten.sport.bloecke)) daten.sport.bloecke = [];
     if (!Array.isArray(daten.sport.pakete)) daten.sport.pakete = [];
+    if (!daten.sport.sessionNamen || typeof daten.sport.sessionNamen !== "object") daten.sport.sessionNamen = {};
+    sportNormalisieren(daten.sport);
     const standard = leereDaten().einstellungen;
     daten.einstellungen = Object.assign({}, standard, daten.einstellungen || {});
 

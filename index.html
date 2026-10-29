@@ -250,42 +250,36 @@
     </dialog>
 
 
-    <!-- ===== Fenster: Sport (Training des Tages) ===== -->
+    <!-- ===== Fenster: Sport (Session des Tages) ===== -->
     <dialog id="dialogSport" class="fenster">
         <div class="fenster-kopf">
             <h2 id="sportTitel">Sport today</h2>
             <button type="button" class="knopf-icon" data-schliessen data-t-aria="schliessen" aria-label="Close">✕</button>
         </div>
+        <input id="sessionName" class="eingabe-name session-name" type="text" maxlength="40" autocomplete="off"
+               data-t-ph="sessionNamePh" data-t-aria="sessionNameAria" placeholder="Session name, e.g. HYROX unit" aria-label="Session name">
         <div id="sportListe" class="sport-liste"></div>
-        <p class="unterzeile" data-t="sportNeuTitel">Add exercise:</p>
-        <div class="sport-arten">
-            <button type="button" class="sport-art" data-sport-neu="kraft"><span aria-hidden="true">🏋️</span><b data-t="art_kraft">Strength</b><small data-t="artText_kraft">Sets × weight</small></button>
-            <button type="button" class="sport-art" data-sport-neu="ausdauer"><span aria-hidden="true">🏃</span><b data-t="art_ausdauer">Cardio</b><small data-t="artText_ausdauer">Time + intervals</small></button>
-            <button type="button" class="sport-art" data-sport-neu="schwimmen"><span aria-hidden="true">🏊</span><b data-t="art_schwimmen">Swimming</b><small data-t="artText_schwimmen">Distance + sets</small></button>
+        <div class="sport-knoepfe">
+            <button type="button" class="knopf-primaer" id="sportNeu" data-t="uebungNeu">＋ New exercise</button>
+            <button type="button" class="knopf-zweit" id="sportBloecke" data-t="uebungBestehend">📚 Saved exercise</button>
         </div>
-        <button type="button" class="knopf-zweit breit" id="sportBloecke" data-t="sportBloecke">📚 From my saved workouts</button>
-        <div id="sportPaketBox" class="sport-paket" hidden>
-            <p class="unterzeile" data-t="paketTitel">Save today's workout as a package:</p>
-            <div class="scan-zeile">
-                <input id="sportPaketName" class="eingabe-name" type="text" maxlength="40" data-t-ph="paketPh" placeholder="e.g. Leg day">
-                <button type="button" class="knopf-primaer" id="sportPaketSpeichern" data-t="speichernKurz">Save</button>
-            </div>
-        </div>
+        <button type="button" class="knopf-zweit breit" id="sportSessions" data-t="sessionUebernehmen">📦 Take over a whole session</button>
+        <button type="button" class="knopf-zweit breit" id="sportSessionSpeichern" data-t="sessionSpeichern" hidden>💾 Save session for later</button>
     </dialog>
 
-    <!-- ===== Fenster: gespeicherte Übungen & Pakete ===== -->
+    <!-- ===== Fenster: gespeicherte Übungen & Sessions ===== -->
     <dialog id="dialogBloecke" class="fenster">
         <div class="fenster-kopf">
-            <h2 data-t="bloeckeTitel">My saved workouts</h2>
+            <h2 id="bloeckeTitel" data-t="bloeckeTitel">Saved exercises</h2>
             <button type="button" class="knopf-icon" data-schliessen data-t-aria="schliessen" aria-label="Close">✕</button>
         </div>
         <label class="suche">
             <span aria-hidden="true">🔍</span>
-            <input id="blockSuche" type="search" data-t-ph="blockSuchePh" placeholder="Search exercises …" autocomplete="off">
+            <input id="blockSuche" type="search" data-t-ph="blockSuchePh" placeholder="Search …" autocomplete="off">
         </label>
-        <h3 class="block-titel" id="blockGanzeTitel" data-t="ganzesTraining">Take over a whole workout</h3>
+        <h3 class="block-titel" id="blockGanzeTitel" data-t="ganzesTraining">Whole session</h3>
         <div id="blockGanze" class="sport-liste"></div>
-        <h3 class="block-titel" data-t="einzelneUebung">Single exercise</h3>
+        <h3 class="block-titel" id="blockEinzelnTitel" data-t="einzelneUebung">Single exercise</h3>
         <div id="blockEinzeln" class="sport-liste"></div>
     </dialog>
 
@@ -295,7 +289,8 @@
             <h2 id="uebungTitel">Exercise</h2>
             <button type="button" class="knopf-icon" data-schliessen data-t-aria="schliessen" aria-label="Close">✕</button>
         </div>
-        <input id="uebungName" class="eingabe-name" type="text" maxlength="60" autocomplete="off" data-t-aria="uebungNameAria" aria-label="Exercise name">
+        <input id="uebungName" class="eingabe-name" type="text" maxlength="60" autocomplete="off"
+               data-t-ph="uebungNamePh" data-t-aria="uebungNameAria" placeholder="e.g. Squats, SkiErg, Running" aria-label="Exercise name">
 
         <!-- Video: wie die Übung geht (Hochformat vom Handy) -->
         <div class="uebung-video">
@@ -309,25 +304,15 @@
             <input id="uebungVideoInput" type="file" accept="video/*" hidden>
         </div>
 
-        <!-- Kraft: Sätze -->
-        <div id="uebungKraft">
-            <h3 class="block-titel" data-t="saetze">Sets</h3>
-            <div id="uebungSaetze" class="saetze"></div>
-            <button type="button" class="knopf-hinzu" id="uebungSatzPlus" data-t="satzPlus">＋ Set</button>
-        </div>
+        <!-- Was wird gemessen? Frei wählbar statt Kraft/Ausdauer/Schwimmen -->
+        <p class="unterzeile" data-t="felderTitel">What do you want to log?</p>
+        <div id="uebungFelder" class="felder-wahl" role="group" data-t-aria="felderTitel" aria-label="What do you want to log?"></div>
 
-        <!-- Ausdauer / Schwimmen: Dauer, Strecke, Intervalle bzw. Abschnitte -->
-        <div id="uebungAusdauer">
-            <div class="werte-zeile">
-                <label class="wert-feld"><input id="uebungDauer" type="text" inputmode="decimal" placeholder="0"><span>min</span></label>
-                <label class="wert-feld"><input id="uebungDistanz" type="text" inputmode="decimal" placeholder="0"><span id="uebungDistanzEinheit">km</span></label>
-            </div>
-            <h3 class="block-titel" id="uebungAbschnitteTitel">Intervals</h3>
-            <div id="uebungAbschnitte" class="saetze"></div>
-            <div class="video-knoepfe">
-                <button type="button" class="knopf-hinzu" id="uebungAbschnittPlus">＋ Interval</button>
-                <button type="button" class="knopf-zweit" id="uebungWiederholen" data-t="wiederholen" hidden>↻ Repeat round</button>
-            </div>
+        <h3 class="block-titel" data-t="saetze">Sets</h3>
+        <div id="uebungSaetze" class="saetze"></div>
+        <div class="video-knoepfe">
+            <button type="button" class="knopf-hinzu" id="uebungSatzPlus" data-t="satzPlus">＋ Set</button>
+            <button type="button" class="knopf-zweit" id="uebungWiederholen" data-t="wiederholen" hidden>↻ Repeat all</button>
         </div>
 
         <textarea id="uebungNotiz" class="anleitung-feld" rows="2" maxlength="300" data-t-ph="notizPh" placeholder="Note (optional)"></textarea>

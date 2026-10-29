@@ -1684,3 +1684,18 @@ body[data-tab="foods"] .bereich-plan {
 .knopf-icon.vorschlag-ja { color: var(--akzent); border-color: var(--akzent); }
 #trainerInhalt .trainer-zeile { margin-bottom: 8px; }
 #kontoCode::placeholder { text-transform: none; }
+
+/* ===== Version 2.2: Sessions + freie Felder ===== */
+.session-name { margin-bottom: 12px; font-weight: 600; }
+.sport-knoepfe { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+.sport-knoepfe > * { min-height: 48px; }
+#sportSessions, #sportSessionSpeichern { margin-top: 8px; }
+#sportSessionSpeichern[hidden] { display: none; }
+.felder-wahl { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; }
+.felder-wahl .chip { min-height: 38px; }
+.satz-zeile { flex-wrap: wrap; row-gap: 6px; }
+.satz-nr { width: 26px; }
+.satz-feld { width: 62px; }
+.satz-feld.zeit { width: 70px; }
+.satz-text { flex: 1 1 120px; }
+.block-titel[hidden], #blockGanze:empty, #blockEinzeln:empty { display: none; }

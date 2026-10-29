@@ -120,7 +120,7 @@ function trainerPostHolen() {
                 const u = uebungKopie(e.inhalt || {});
                 u.id = neueId();
                 u.vomTrainer = true;
-                if (!u.name || !SPORT_ARTEN[u.art]) { arbeit.push(wolke.eintragStatus(e.id, "abgelehnt")); return; }
+                if (!u.name) { arbeit.push(wolke.eintragStatus(e.id, "abgelehnt")); return; }
                 if (!daten.sport.tage[e.datum]) daten.sport.tage[e.datum] = [];
                 daten.sport.tage[e.datum].push(u);
                 const schonBlock = daten.sport.bloecke.some(function (b) {
@@ -500,7 +500,7 @@ function zeichneTrainerAnsicht() {
         const zeile = el("div", "trainer-zeile offen");
         const info = el("div", "sport-info");
         const i = e.inhalt || {};
-        info.appendChild(el("strong", "", (e.bereich === "sport" ? (SPORT_ARTEN[i.art] ? SPORT_ARTEN[i.art].icon : "🏅") : "🍽️") + " " + (i.name || "")));
+        info.appendChild(el("strong", "", (e.bereich === "sport" ? uebungIcon(uebungNormalisieren(i)) : "🍽️") + " " + (i.name || "")));
         info.appendChild(el("small", "", t(e.bereich === "sport" ? "wartetSport" : "wartetEssen") +
             (e.bereich === "sport" ? " · " + uebungKurztext(i) : " · " + format(i.gramm || 100) + " g")));
         zeile.appendChild(info);
@@ -510,17 +510,10 @@ function zeichneTrainerAnsicht() {
         box.appendChild(zeile);
     });
 
-    const neu = el("div", "sport-arten klein");
-    Object.keys(SPORT_ARTEN).forEach(function (art) {
-        const knopf = el("button", "sport-art");
-        knopf.type = "button";
-        knopf.dataset.trainerNeu = art;
-        knopf.appendChild(el("span", "", SPORT_ARTEN[art].icon));
-        knopf.appendChild(el("b", "", t("art_" + art)));
-        knopf.addEventListener("click", function () { trainerUebungNeu(art); });
-        neu.appendChild(knopf);
-    });
-    box.appendChild(el("p", "unterzeile", t("trainerUebungEintragen")));
+    const neu = el("button", "knopf-primaer breit", t("trainerUebungEintragen"));
+    neu.type = "button";
+    neu.id = "trainerUebungNeu";
+    neu.addEventListener("click", trainerUebungNeu);
     box.appendChild(neu);
 
     // --- Essen ---
@@ -562,7 +555,7 @@ function trainerUebungZeile(u) {
     const zeile = el("div", "trainer-uebung");
     const knopf = el("button", "sport-zeile");
     knopf.type = "button";
-    knopf.appendChild(el("span", "sport-icon", SPORT_ARTEN[u.art] ? SPORT_ARTEN[u.art].icon : "🏅"));
+    knopf.appendChild(el("span", "sport-icon", uebungIcon(u)));
     const info = el("span", "sport-info");
     info.appendChild(el("strong", "", u.name + (u.videoId ? " 🎬" : "") + (u.vomTrainer ? " 👤" : "")));
     info.appendChild(el("small", "", uebungKurztext(u)));
@@ -584,7 +577,7 @@ function trainerUebungZeile(u) {
 }
 
 // Trainer trägt eine Übung ein → wird an die Sportlerin geschickt (landet direkt in ihrem Plan)
-function trainerUebungNeu(art) {
+function trainerUebungNeu() {
     const sportlerId = trainerAnsicht.id;
     const datum = trainerDatum;
     uebungZiel = function (u) {
@@ -600,7 +593,7 @@ function trainerUebungNeu(art) {
             return blob ? wolke.videoHochladen(sportlerId + "/" + u.videoId, blob) : null;
         }).then(senden).catch(function () { zeigeMeldung(t("videoFehler"), true); });
     };
-    neueUebung(art);
+    neueUebung();
 }
 
 // Essensvorschlag: suchen → Gramm → vorschlagen
