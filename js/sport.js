@@ -210,7 +210,8 @@ function uebungZeile(u, beimTippen, rechts) {
     knopf.type = "button";
     knopf.appendChild(el("span", "sport-icon", uebungIcon(u)));
     const info = el("span", "sport-info");
-    info.appendChild(el("strong", "", u.name + (u.videoId ? " 🎬" : "") + (u.vomTrainer ? " 👤" : "")));
+    const hatVideo = u.videoId || (typeof bibHatVideo === "function" && bibHatVideo(u.bibId || (u.kat ? u.id : null)));
+    info.appendChild(el("strong", "", u.name + (hatVideo ? " 🎬" : "") + (u.vomTrainer ? " 👤" : "")));
     info.appendChild(el("small", "", uebungKurztext(u)));
     knopf.appendChild(info);
     if (rechts) knopf.appendChild(el("span", "knopf-icon klein", rechts));
@@ -386,6 +387,44 @@ function zeichneSport() {
     });
 
     $("sportSessionSpeichern").hidden = uebungen.length === 0;
+
+    // Eigene Übungen direkt hier zeigen (zuletzt gemachte zuerst) – ein Tipp trägt ein
+    const meine = $("sportMeine");
+    meine.innerHTML = "";
+    const zuletzt = {};
+    Object.keys(daten.sport.tage).sort().forEach(function (d) {
+        daten.sport.tage[d].forEach(function (u) { zuletzt[(u.name || "").toLowerCase()] = d; });
+    });
+    const bloecke = daten.sport.bloecke.slice().sort(function (a, b) {
+        return String(zuletzt[b.name.toLowerCase()] || "").localeCompare(String(zuletzt[a.name.toLowerCase()] || ""));
+    }).slice(0, 12);
+    $("sportMeineTitel").hidden = !bloecke.length;
+    bloecke.forEach(function (b) {
+        const zeile = el("div", "sport-eintrag");
+        zeile.appendChild(uebungZeile(b, function () {
+            const vorlage = uebungKopie(b);
+            vorlage.blockId = b.id;
+            vorlageEintragen(vorlage);
+        }, "＋"));
+        meine.appendChild(zeile);
+    });
+    // Noch wenig Eigenes? Dann gleich ein paar Vorschläge zeigen (aus jeder Kategorie die ersten)
+    if (bloecke.length < 6) {
+        meine.appendChild(el("h3", "block-titel", t("bibVorschlaege")));
+        const gezeigt = {};
+        UEBUNG_BIBLIOTHEK.filter(function (b) {
+            gezeigt[b.kat] = (gezeigt[b.kat] || 0) + 1;
+            return gezeigt[b.kat] <= 2;
+        }).forEach(function (b) {
+            const zeile = el("div", "sport-eintrag");
+            zeile.appendChild(uebungZeile(bibZuUebung(b), function () { vorlageEintragen(bibZuUebung(b)); }, "＋"));
+            meine.appendChild(zeile);
+        });
+        const mehr = el("button", "knopf-link", t("alleVorschlaege"));
+        mehr.type = "button";
+        mehr.addEventListener("click", function () { oeffneBloecke("einzeln"); });
+        meine.appendChild(mehr);
+    }
 }
 
 // Name der Session merken (z. B. "HYROX Einheit")
@@ -430,6 +469,8 @@ function uebungenUebernehmen(vorlagen, name) {
 // =====================================================
 function oeffneBloecke(modus) {
     blockModus = modus;
+    bibKategorie = "alle";
+    zeichneKategorien();
     $("blockSuche").value = "";
     $("bloeckeTitel").textContent = t(modus === "session" ? "sessionsTitel" : "bloeckeTitel");
     zeichneBloecke();
@@ -464,7 +505,7 @@ function zeichneBloecke() {
         const gefiltert = angebote.filter(function (a) {
             return !such || a.titel.toLowerCase().includes(such) || a.text.toLowerCase().includes(such);
         });
-        if (!gefiltert.length) ganze.appendChild(el("p", "leer klein", t(such ? "nichtsGefunden" : "sessionsLeer")));
+        if (gefiltert.length) ganze.appendChild(el("h3", "block-titel", t("meineSessions")));
         gefiltert.forEach(function (a) {
             const zeile = el("div", "sport-eintrag");
             const knopf = el("button", "sport-zeile");
@@ -490,29 +531,52 @@ function zeichneBloecke() {
         });
     }
 
+    // 1b. Fertige Session-Vorlagen (HYROX, Triathlon, Gym, Home)
+    if (zeigeSessions) {
+        const vorlagen = SESSION_VORLAGEN.filter(function (v) {
+            const name = (v.de + " " + v.en).toLowerCase();
+            return !such || name.includes(such);
+        });
+        if (vorlagen.length) ganze.appendChild(el("h3", "block-titel", t("vorlagenTitel")));
+        vorlagen.forEach(function (v) {
+            const uebungen = v.uebungen.map(function (id) { return bibZuUebung(UEBUNG_BIBLIOTHEK_NACH_ID[id]); });
+            const name = daten.einstellungen.sprache === "en" ? v.en : v.de;
+            const knopf = el("button", "sport-zeile");
+            knopf.type = "button";
+            knopf.appendChild(el("span", "sport-icon", "⭐"));
+            const info = el("span", "sport-info");
+            info.appendChild(el("strong", "", name));
+            info.appendChild(el("small", "", anzahlText("uebungenAnzahl", uebungen.length)));
+            knopf.appendChild(info);
+            knopf.appendChild(el("span", "knopf-icon klein", "＋"));
+            knopf.addEventListener("click", function () {
+                uebungenUebernehmen(uebungen, name);
+                schliesseFenster("dialogBloecke");
+                zeigeMeldung(anzahlText("trainingUebernommen", uebungen.length));
+            });
+            const zeile = el("div", "sport-eintrag");
+            zeile.appendChild(knopf);
+            ganze.appendChild(zeile);
+        });
+    }
+
     // 2. Einzelne Übungen (Blöcke)
     const einzeln = $("blockEinzeln");
     einzeln.innerHTML = "";
+    $("blockKategorien").hidden = zeigeSessions;
     if (zeigeSessions) return;
+    if (bibKategorie !== "alle") { zeichneBibliothek(einzeln, such); return; }
     const bloecke = daten.sport.bloecke
         .filter(function (b) { return !such || b.name.toLowerCase().includes(such); })
         .sort(function (a, b) { return a.name.localeCompare(b.name, gebietsschema()); });
-    if (bloecke.length === 0) einzeln.appendChild(el("p", "leer klein", t(such ? "nichtsGefunden" : "bloeckeLeer")));
+    if (bloecke.length) einzeln.appendChild(el("h3", "block-titel", t("meineUebungen")));
     bloecke.forEach(function (b) {
         const zeile = el("div", "sport-eintrag");
         zeile.appendChild(uebungZeile(b, function () {
             // Übernehmen und gleich zum Anpassen öffnen
             const vorlage = uebungKopie(b);
             vorlage.blockId = b.id;
-            vorlage.id = neueId();
-            if (!daten.sport.tage[aktuellesDatum]) daten.sport.tage[aktuellesDatum] = [];
-            daten.sport.tage[aktuellesDatum].push(vorlage);
-            sportSpeichern();
-            schliesseFenster("dialogBloecke");
-            zeichneSport();
-            zeichneSportTag();
-            zeigeMeldung(t("uebungUebernommen", { name: b.name }));
-            oeffneUebung(vorlage.id);
+            vorlageEintragen(vorlage);
         }, "＋"));
         zeile.appendChild(loeschKnopf(function () {
             daten.sport.bloecke = daten.sport.bloecke.filter(function (x) { return x !== b; });
@@ -521,6 +585,60 @@ function zeichneBloecke() {
             zeichneBloecke();
         }, b.name));
         einzeln.appendChild(zeile);
+    });
+    zeichneBibliothek(einzeln, such);
+}
+
+// Übung in den Tag übernehmen und gleich zum Anpassen öffnen
+function vorlageEintragen(vorlage) {
+    vorlage.id = neueId();
+    if (!daten.sport.tage[aktuellesDatum]) daten.sport.tage[aktuellesDatum] = [];
+    daten.sport.tage[aktuellesDatum].push(vorlage);
+    sportSpeichern();
+    schliesseFenster("dialogBloecke");
+    zeichneSport();
+    zeichneSportTag();
+    zeigeMeldung(t("uebungUebernommen", { name: vorlage.name }));
+    oeffneUebung(vorlage.id);
+}
+
+// Vorschläge aus der Übungs-Bibliothek (nach Kategorie), eigene Übungen mit gleichem Namen ausgeblendet
+let bibKategorie = "alle";
+function bibPasst(b, such) {
+    if (!such) return true;
+    const text = (b.de + " " + b.en + " " + b.stichworte + " " + t("kat_" + b.kat)).toLowerCase();
+    return such.split(/\s+/).every(function (w) { return text.includes(w); });
+}
+function zeichneBibliothek(box, such) {
+    const eigene = {};
+    daten.sport.bloecke.forEach(function (b) { eigene[b.name.toLowerCase()] = true; });
+    const liste = UEBUNG_BIBLIOTHEK.filter(function (b) {
+        return (bibKategorie === "alle" || b.kat === bibKategorie) && bibPasst(b, such) &&
+            !eigene[b.de.toLowerCase()] && !eigene[b.en.toLowerCase()];
+    });
+    box.appendChild(el("h3", "block-titel", t("bibVorschlaege")));
+    if (!liste.length) { box.appendChild(el("p", "leer klein", t("nichtsGefunden"))); return; }
+    let letzteKat = null;
+    liste.forEach(function (b) {
+        if (bibKategorie === "alle" && b.kat !== letzteKat && !such) {
+            letzteKat = b.kat;
+            box.appendChild(el("p", "unterzeile bib-kat", t("kat_" + b.kat)));
+        }
+        const u = bibZuUebung(b);
+        const zeile = el("div", "sport-eintrag");
+        zeile.appendChild(uebungZeile(Object.assign({}, u), function () { vorlageEintragen(bibZuUebung(b)); }, "＋"));
+        box.appendChild(zeile);
+    });
+}
+
+function zeichneKategorien() {
+    const box = $("blockKategorien");
+    box.innerHTML = "";
+    ["alle"].concat(UEBUNG_KATEGORIEN).forEach(function (kat) {
+        const k = el("button", "chip" + (bibKategorie === kat ? " aktiv" : ""), t("kat_" + kat));
+        k.type = "button";
+        k.addEventListener("click", function () { bibKategorie = kat; zeichneKategorien(); zeichneBloecke(); });
+        box.appendChild(k);
     });
 }
 
@@ -551,7 +669,38 @@ function neueUebung() {
     uebungEntwurf = uebungNormalisieren({ name: "", felder: ["wdh", "kg"], saetze: [leererSatz()] });
     zeichneUebung();
     oeffneFenster("dialogUebung");
-    $("uebungName").focus(); // direkt den Namen eintippen
+}
+
+// Beim Tippen des Namens: passende Vorschläge (eigene + Bibliothek) – ein Tipp übernimmt alles
+function zeichneUebungVorschlaege() {
+    const box = $("uebungVorschlaege");
+    box.innerHTML = "";
+    const such = $("uebungName").value.trim().toLowerCase();
+    if (uebungBearbeiteId || such.length < 2) { box.hidden = true; return; }
+    const treffer = [];
+    daten.sport.bloecke.forEach(function (b) {
+        if (b.name.toLowerCase().includes(such) && b.name.toLowerCase() !== such) treffer.push({ name: b.name, u: function () { const k = uebungKopie(b); k.blockId = b.id; return k; } });
+    });
+    UEBUNG_BIBLIOTHEK.forEach(function (b) {
+        if (treffer.length >= 6 || !bibPasst(b, such)) return;
+        if (treffer.some(function (x) { return x.name.toLowerCase() === bibName(b).toLowerCase(); })) return;
+        treffer.push({ name: bibName(b), u: function () { return bibZuUebung(b); } });
+    });
+    box.hidden = !treffer.length;
+    treffer.slice(0, 6).forEach(function (x) {
+        const k = el("button", "chip", x.name);
+        k.type = "button";
+        k.addEventListener("click", function () {
+            const videoVorher = uebungEntwurf.videoId;
+            uebungEntwurf = x.u();
+            if (!uebungEntwurf.videoId && videoVorher) uebungEntwurf.videoId = videoVorher;
+            uebungFelderGewaehlt = true;
+            if (document.activeElement) document.activeElement.blur(); // Tastatur zu
+            zeichneUebung();
+            box.hidden = true;
+        });
+        box.appendChild(k);
+    });
 }
 
 function oeffneUebung(id) {
@@ -572,9 +721,11 @@ function zeichneUebung() {
     $("uebungNotiz").value = u.notiz || "";
     $("uebungFehler").textContent = "";
     $("uebungLoeschen").hidden = !uebungBearbeiteId;
+    $("uebungLoeschen").textContent = t("loeschen");
     zeichneFelderWahl();
     zeichneSaetze();
     zeichneUebungVideo();
+    zeichneUebungVorschlaege();
 }
 
 // Schalter: Wdh. · kg · Meter · Zeit · Notiz
@@ -670,7 +821,20 @@ function zeichneUebungVideo() {
     video.removeAttribute("src");
     $("uebungVideoWeg").hidden = !uebungEntwurf.videoId;
     $("uebungVideoKnopf").textContent = t(uebungEntwurf.videoId ? "videoErsetzen" : "videoHochladen");
-    if (!uebungEntwurf.videoId) { box.hidden = true; return; }
+    // Admin (Ivy): Video einer Vorschlags-Übung für alle speichern
+    const fuerAlle = $("uebungVideoAlle");
+    fuerAlle.hidden = !(istAdmin() && uebungEntwurf.bibId && uebungEntwurf.videoId);
+    fuerAlle.textContent = t(bibHatVideo(uebungEntwurf.bibId) ? "videoAlleErsetzen" : "videoAlle");
+    if (!uebungEntwurf.videoId) {
+        // Kein eigenes Video – gibt es eins "für alle" zu dieser Übung?
+        if (bibHatVideo(uebungEntwurf.bibId)) {
+            box.hidden = false;
+            bibVideoAdresse(uebungEntwurf.bibId).then(function (adresse) { video.src = adresse; }).catch(function () { box.hidden = true; });
+        } else {
+            box.hidden = true;
+        }
+        return;
+    }
     box.hidden = false;
     const id = uebungEntwurf.videoId;
     // Liegt das Video nicht auf diesem Gerät (z. B. vom Trainer), aus dem Online-Speicher holen
@@ -828,6 +992,24 @@ function sportVerbinden() {
         uebungEntwurf.videoId = null; // das Video selbst räumt uebungSpeichern auf
         zeichneUebungVideo();
     });
+    $("uebungVideoAlle").addEventListener("click", function () {
+        const knopf = $("uebungVideoAlle");
+        const bibId = uebungEntwurf.bibId;
+        knopf.disabled = true;
+        knopf.textContent = t("videoLaedt");
+        videoLaden(uebungEntwurf.videoId).then(function (blob) {
+            if (!blob) throw new Error("kein Video");
+            return bibVideoFuerAlle(bibId, blob);
+        }).then(function () {
+            zeigeMeldung(t("videoAlleOk"));
+        }).catch(function () {
+            zeigeMeldung(t("videoAlleFehler"), true);
+        }).then(function () {
+            knopf.disabled = false;
+            zeichneUebungVideo();
+        });
+    });
+    $("uebungName").addEventListener("input", zeichneUebungVorschlaege);
     $("uebungSpeichern").addEventListener("click", uebungSpeichern);
     $("uebungLoeschen").addEventListener("click", uebungLoeschen);
     $("dialogUebung").addEventListener("close", function () {

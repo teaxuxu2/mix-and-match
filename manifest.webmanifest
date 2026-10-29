@@ -1,6 +1,6 @@
 {
-  "name": "Mix & Match Calories",
-  "short_name": "Mix & Match",
+  "name": "Mix & Match Cal",
+  "short_name": "Mix & Match Cal",
   "description": "Mix your favorite foods into your perfect day – calories and protein are calculated automatically.",
   "start_url": "./index.html",
   "scope": "./",

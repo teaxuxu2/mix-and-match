@@ -1,4 +1,4 @@
-# Mix & Match Calories
+# Mix & Match Cal
 
 Mix your favorite foods into your perfect day – calories and protein are calculated automatically.
 

@@ -18,8 +18,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#0b1218">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Mix & Match Calories</title>
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <title>Mix & Match Cal</title>
+    <meta name="apple-mobile-web-app-title" content="Mix & Match Cal">
+    <meta name="application-name" content="Mix & Match Cal">
     <meta name="description" content="Mix your favorite foods into your perfect day – calories and protein are calculated automatically.">
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="icon" type="image/png" href="bilder/icon/favicon.png">
@@ -37,7 +39,7 @@
     <header class="kopf">
         <h1 class="logo">
             mix<span>&amp;</span>match
-            <small>CALORIES</small>
+            <small>CAL</small>
         </h1>
         <section class="creators" aria-labelledby="creatorsTitel">
             <h2 id="creatorsTitel" class="creators-titel" data-t="creators">What I Eat in a Day</h2>
@@ -62,6 +64,7 @@
             <div class="filter" role="group">
                 <button type="button" class="chip aktiv" data-filter="alle" data-t="filterAlle">All</button>
                 <button type="button" class="chip" data-filter="favoriten" data-t="filterFav">Favorites</button>
+                <button type="button" class="chip" data-filter="zuletzt" data-t="filterZuletzt">Recent</button>
                 <button type="button" class="chip" data-filter="eigene" data-t="filterEigene">My Foods</button>
                 <button type="button" class="chip" data-filter="rezepte" data-t="filterRezepte">Recipes</button>
                 <button type="button" class="chip chip-plus" id="knopfNeuKlein" data-t-aria="lmHinzu" aria-label="Add food">＋</button>
@@ -83,53 +86,49 @@
                 </div>
             </div>
 
-            <!-- Kennzahlen: kcal · Protein · Fett · KH mit Ziel-Balken -->
+            <!-- Kennzahlen: Icon · Zahl · Balken · Ziel (ohne viel Text) -->
             <div class="kpis" role="group" data-t-aria="kennzahlen" aria-label="Today's totals">
                 <div class="kpi" id="kpiKcal" style="--farbe: var(--farbe-kcal)">
-                    <span class="kpi-icon" aria-hidden="true">🔥</span>
-                    <strong id="kcalIst">0</strong><span class="kpi-einheit">kcal</span>
+                    <span class="kpi-zeile"><span class="kpi-icon" aria-hidden="true">🔥</span><strong id="kcalIst">0</strong></span>
                     <span class="kpi-spur"><i></i></span>
                     <small id="kcalZiel">/ 2,200 kcal</small>
                 </div>
                 <div class="kpi" id="kpiProtein" style="--farbe: var(--farbe-protein)">
-                    <span class="kpi-icon" aria-hidden="true">💪</span>
-                    <strong id="proteinIst">0 g</strong><span class="kpi-einheit" data-t="protein">Protein</span>
+                    <span class="kpi-zeile"><span class="kpi-icon" aria-hidden="true">💪</span><strong id="proteinIst">0</strong></span>
                     <span class="kpi-spur"><i></i></span>
                     <small id="proteinZiel">/ 160 g</small>
                 </div>
                 <div class="kpi" id="kpiFett" style="--farbe: var(--farbe-fett)">
-                    <span class="kpi-icon" aria-hidden="true">💧</span>
-                    <strong id="fettIst">0 g</strong><span class="kpi-einheit" data-t="fett">Fat</span>
+                    <span class="kpi-zeile"><span class="kpi-icon" aria-hidden="true">🧈</span><strong id="fettIst">0</strong></span>
                     <span class="kpi-spur"><i></i></span>
                     <small id="fettZiel">/ 80 g</small>
                 </div>
                 <div class="kpi" id="kpiKh" style="--farbe: var(--farbe-kh)">
-                    <span class="kpi-icon" aria-hidden="true">🌾</span>
-                    <strong id="khIst">0 g</strong><span class="kpi-einheit" data-t="kpiKh">Carbs</span>
+                    <span class="kpi-zeile"><span class="kpi-icon" aria-hidden="true">🍞</span><strong id="khIst">0</strong></span>
                     <span class="kpi-spur"><i></i></span>
                     <small id="khZiel">/ 250 g</small>
                 </div>
             </div>
 
-            <!-- Suchen + mit einem Tipp eintragen, Scanner, Sport -->
+            <!-- Suchen (mit Scanner) + Icons: Favoriten · Zuletzt · Rezeptbuch -->
             <div class="tag-oben">
                 <label class="suche tag-suche">
                     <span aria-hidden="true">🔍</span>
                     <input id="tagSuche" type="search" data-t-ph="tagSuchePh" placeholder="Add food …" autocomplete="off" enterkeyhint="search">
+                    <button type="button" class="suche-mikro" id="tagMikro" data-t-aria="diktieren" data-t-title="diktieren" aria-label="Dictate" title="Dictate" hidden>🎤</button>
                     <button type="button" class="suche-scan" id="tagScan" data-t-aria="scanOeffnen" data-t-title="scanOeffnen" aria-label="Scan barcode" title="Scan barcode">
                         <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M7 8v8M10 8v8M13 8v8M16.5 8v8" stroke="currentColor" stroke-width="1.6"/></svg>
                     </button>
                 </label>
-                <button type="button" class="knopf-sport" id="knopfSport">
-                    <span aria-hidden="true">🏋️</span><span data-t="sport">Sport</span>
-                </button>
+                <button type="button" class="icon-knopf" id="iconFavoriten" data-t-aria="chipFavoriten" data-t-title="chipFavoriten" aria-label="Favorites" aria-pressed="false">⭐</button>
+                <button type="button" class="icon-knopf" id="iconZuletzt" data-t-aria="zuletztTitel" data-t-title="zuletztTitel" aria-label="Recent" aria-pressed="false">🕘</button>
+                <button type="button" class="icon-knopf" id="iconRezepte" data-t-aria="chipRezeptbuch" data-t-title="chipRezeptbuch" aria-label="Recipe book">📖</button>
             </div>
             <div id="tagTreffer" class="tag-treffer liste kompakt" hidden></div>
-            <div class="schnell-chips">
-                <button type="button" class="chip" id="chipFavoriten" data-t="chipFavoriten">☆ Favorites</button>
-                <button type="button" class="chip" id="chipRezeptbuch" data-t="chipRezeptbuch">📖 Recipe book</button>
-            </div>
-            <div id="schnellwahl" class="schnellwahl" role="group" data-t-aria="schnellwahl" aria-label="Quick add"></div>
+            <div id="schnellPanel" class="schnell-panel" hidden></div>
+            <button type="button" class="knopf-sport breit" id="knopfSport">
+                <span aria-hidden="true">🏋️</span><span data-t="sportEintragen">Log a workout</span>
+            </button>
 
             <div id="trainerVorschlaege" class="vorschlaege" hidden></div>
             <div id="mahlzeiten" class="mahlzeiten"></div>
@@ -281,6 +280,14 @@
                 <span class="neu-icon" aria-hidden="true">📷</span>
                 <span><b data-t="neuScan">Scan barcode</b><small data-t="neuScanText">Point the camera at the package</small></span>
             </button>
+            <button type="button" class="neu-karte" id="neuUebung">
+                <span class="neu-icon" aria-hidden="true">🏋️</span>
+                <span><b data-t="neuUebung">Exercise</b><small data-t="neuUebungText">A single exercise – from suggestions or your own</small></span>
+            </button>
+            <button type="button" class="neu-karte" id="neuSession">
+                <span class="neu-icon" aria-hidden="true">📦</span>
+                <span><b data-t="neuSession">Whole session</b><small data-t="neuSessionText">HYROX, triathlon, gym, home – or one of yours</small></span>
+            </button>
         </div>
     </dialog>
 
@@ -296,10 +303,12 @@
         <div id="sportListe" class="sport-liste"></div>
         <div class="sport-knoepfe">
             <button type="button" class="knopf-primaer" id="sportNeu" data-t="uebungNeu">＋ New exercise</button>
-            <button type="button" class="knopf-zweit" id="sportBloecke" data-t="uebungBestehend">📚 Saved exercise</button>
+            <button type="button" class="knopf-zweit" id="sportBloecke" data-t="uebungBestehend">📚 Choose exercise</button>
         </div>
         <button type="button" class="knopf-zweit breit" id="sportSessions" data-t="sessionUebernehmen">📦 Take over a whole session</button>
         <button type="button" class="knopf-zweit breit" id="sportSessionSpeichern" data-t="sessionSpeichern" hidden>💾 Save session for later</button>
+        <h3 class="block-titel" id="sportMeineTitel" data-t="meineUebungenSchnell" hidden>My exercises – tap to add</h3>
+        <div id="sportMeine" class="sport-liste"></div>
     </dialog>
 
     <!-- ===== Fenster: gespeicherte Übungen & Sessions ===== -->
@@ -312,6 +321,7 @@
             <span aria-hidden="true">🔍</span>
             <input id="blockSuche" type="search" data-t-ph="blockSuchePh" placeholder="Search …" autocomplete="off">
         </label>
+        <div id="blockKategorien" class="kategorie-chips" role="group"></div>
         <h3 class="block-titel" id="blockGanzeTitel" data-t="ganzesTraining">Whole session</h3>
         <div id="blockGanze" class="sport-liste"></div>
         <h3 class="block-titel" id="blockEinzelnTitel" data-t="einzelneUebung">Single exercise</h3>
@@ -326,6 +336,7 @@
         </div>
         <input id="uebungName" class="eingabe-name" type="text" maxlength="60" autocomplete="off"
                data-t-ph="uebungNamePh" data-t-aria="uebungNameAria" placeholder="e.g. Squats, SkiErg, Running" aria-label="Exercise name">
+        <div id="uebungVorschlaege" class="uebung-vorschlaege" hidden></div>
 
         <!-- Video: wie die Übung geht (Hochformat vom Handy) -->
         <div class="uebung-video">
@@ -335,6 +346,7 @@
             <div class="video-knoepfe">
                 <button type="button" class="knopf-zweit" id="uebungVideoKnopf">🎥 Add video</button>
                 <button type="button" class="knopf-zweit" id="uebungVideoWeg" data-t="videoEntfernen" hidden>Remove video</button>
+                <button type="button" class="knopf-zweit" id="uebungVideoAlle" hidden>🌍 Video for everyone</button>
             </div>
             <input id="uebungVideoInput" type="file" accept="video/*" hidden>
         </div>
@@ -590,6 +602,7 @@
     <script src="js/speicher.js"></script>
     <script src="js/online.js"></script>
     <script src="js/scanner.js"></script>
+    <script src="js/uebungen.js"></script>
     <script src="js/sport.js"></script>
     <script src="js/wolke-konfig.js"></script>
     <script src="js/wolke.js"></script>

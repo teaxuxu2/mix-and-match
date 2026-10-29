@@ -371,12 +371,14 @@ function gefilterteLebensmittel(text, mitFilter) {
         .filter(function (lm) {
             if (mitFilter === "favoriten" && !lm.favorit) return false;
             if (mitFilter === "eigene" && !lm.eigenes) return false;
+            if (mitFilter === "zuletzt" && !zuletztRang(lm)) return false;
             if (mitFilter === "rezepte" && !lm.rezept) return false;
             if (!such) return true;
             punkte[lm.id] = suchPunkte(lm, suchWoerter, such);
             return punkte[lm.id] > 0;
         })
         .sort(function (a, b) {
+            if (mitFilter === "zuletzt" && !such) return zuletztRang(b) - zuletztRang(a);
             if (a.favorit !== b.favorit) return a.favorit ? -1 : 1;
             if (such) {
                 // genauer Name zuerst, dann Name beginnt mit dem Suchwort, dann nach Punkten
@@ -404,6 +406,7 @@ function zeichneListe() {
         let text = t("leer");
         if (filter === "favoriten" && !suchtext) text = t("leerFav");
         if (filter === "eigene" && !suchtext) text = t("leerEigene");
+        if (filter === "zuletzt" && !suchtext) text = t("leerZuletzt");
         liste.appendChild(el("p", "leer", text));
     }
 
@@ -434,11 +437,11 @@ function zeichneZusammenfassung() {
 
     $("kcalIst").textContent = format(s.kcal);
     $("kcalZiel").textContent = "/ " + format(z.zielKcal) + " kcal";
-    $("proteinIst").textContent = format(s.protein) + " g";
+    $("proteinIst").textContent = format(s.protein);
     $("proteinZiel").textContent = "/ " + format(z.zielProtein) + " g";
-    $("fettIst").textContent = format(s.fett) + " g";
+    $("fettIst").textContent = format(s.fett);
     $("fettZiel").textContent = "/ " + format(z.zielFett) + " g";
-    $("khIst").textContent = format(s.kh) + " g";
+    $("khIst").textContent = format(s.kh);
     $("khZiel").textContent = "/ " + format(z.zielKh) + " g";
     setzeKennzahl("kpiKcal", s.kcal, z.zielKcal);
     setzeKennzahl("kpiProtein", s.protein, z.zielProtein);
@@ -568,52 +571,269 @@ function zeichnePlan() {
     if (typeof zeichneVorschlaege === "function") zeichneVorschlaege();
 }
 
-// Schnellwahl: Favoriten + zuletzt gegessen – ein Tipp trägt ein
+// ---------- Diktieren (Spracheingabe) ----------
+// Sagt man z. B. "200 Gramm Skyr", landet "200 g Skyr" in der Suche → Menge wird gleich übernommen.
+// Geht nur, wo der Browser Spracherkennung kann; sonst bleibt das 🎤 der iPhone-Tastatur.
+function diktierenVerbinden() {
+    const Erkennung = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const knopf = $("tagMikro");
+    if (!Erkennung || !knopf) return;
+    knopf.hidden = false;
+    let laeuft = null;
+    knopf.addEventListener("click", function (e) {
+        e.preventDefault();
+        if (laeuft) { laeuft.stop(); return; }
+        const r = new Erkennung();
+        laeuft = r;
+        r.lang = daten.einstellungen.sprache === "en" ? "en-US" : "de-AT";
+        r.interimResults = true;
+        r.maxAlternatives = 1;
+        knopf.classList.add("hoert");
+        r.onresult = function (ev) {
+            let text = "";
+            for (let i = 0; i < ev.results.length; i++) text += ev.results[i][0].transcript;
+            text = text.replace(/\b(gramm|grams?)\b/gi, "g").replace(/\bstück\b/gi, "Stk").trim();
+            $("tagSuche").value = text;
+            zeichneTagTreffer();
+            zeichneSchnellwahl();
+        };
+        r.onerror = function () { zeigeMeldung(t("diktierenFehler"), true); };
+        r.onend = function () { laeuft = null; knopf.classList.remove("hoert"); };
+        try { r.start(); } catch (f) { laeuft = null; knopf.classList.remove("hoert"); }
+    });
+}
+
+// ---------- Zuletzt ----------
+// Wann wurde ein Lebensmittel zuletzt benutzt? (angelegt, übernommen, gegessen) – 0 = nie
+let zuletztGegessenCache = null;
+function zuletztGegessen() {
+    if (zuletztGegessenCache) return zuletztGegessenCache;
+    const zeit = {};
+    Object.keys(daten.plan).sort().slice(-60).forEach(function (datum) {
+        const ms = new Date(datum + "T12:00:00").getTime();
+        daten.plan[datum].forEach(function (e) { if (!(zeit[e.lebensmittelId] >= ms)) zeit[e.lebensmittelId] = ms; });
+    });
+    zuletztGegessenCache = zeit;
+    setTimeout(function () { zuletztGegessenCache = null; }, 0);
+    return zeit;
+}
+function zuletztRang(lm) {
+    const r = Math.max(lm.zuletzt || 0, zuletztGegessen()[lm.id] || 0);
+    if (r) return r;
+    return lm.eigenes ? 1 : 0; // selbst angelegt, aber noch nie benutzt → ganz unten, aber dabei
+}
+function zuletztListe() {
+    return daten.lebensmittel.filter(function (lm) { return zuletztRang(lm) > 0; })
+        .sort(function (a, b) { return zuletztRang(b) - zuletztRang(a); })
+        .slice(0, 40);
+}
+
+// ---------- Schnell-Panel unter der Suche: ⭐ Favoriten / 🕘 Zuletzt ----------
+let schnellAnsicht = null; // null | "favoriten" | "zuletzt"
+
+function schnellUmschalten(ansicht) {
+    schnellAnsicht = schnellAnsicht === ansicht ? null : ansicht;
+    zeichneSchnellwahl();
+}
+
+// Eine Zeile: Tippen = eintragen (Panel bleibt offen), ☆ = Favorit an/aus
+function schnellZeile(lm, beimEintragen) {
+    const zeile = el("div", "lm-karte schnell-zeile");
+    const knopf = el("button", "schnell-dazu");
+    knopf.type = "button";
+    knopf.appendChild(bildElement(lm, "klein"));
+    const info = el("div", "lm-info");
+    info.appendChild(el("div", "lm-name", anzeigeName(lm)));
+    info.appendChild(el("div", "lm-werte", werteText(lm)));
+    knopf.appendChild(info);
+    knopf.setAttribute("aria-label", t("schnellDazu", { name: anzeigeName(lm) }));
+    function blitz() {
+        zeile.classList.add("eben-dazu");
+        setTimeout(function () { zeile.classList.remove("eben-dazu"); }, 900);
+    }
+    // Antippen → "Wie viel?" darunter; ＋ → sofort mit der gewohnten Menge
+    knopf.addEventListener("click", function () {
+        const offen = zeile.nextSibling && zeile.nextSibling.classList && zeile.nextSibling.classList.contains("menge-frage");
+        document.querySelectorAll(".menge-frage").forEach(function (x) { x.remove(); });
+        if (offen) return;
+        const frage = mengeFrage(lm, null, function (gramm, einheit) {
+            frage.remove();
+            beimEintragen(lm, gramm, einheit);
+            blitz();
+        });
+        zeile.after(frage);
+    });
+    const stern = el("button", "stern-knopf" + (lm.favorit ? " an" : ""), lm.favorit ? "★" : "☆");
+    stern.type = "button";
+    stern.setAttribute("aria-pressed", lm.favorit ? "true" : "false");
+    stern.setAttribute("aria-label", lm.favorit ? t("favRemove") : t("favAdd"));
+    stern.addEventListener("click", function () {
+        lm.favorit = !lm.favorit;
+        speichern();
+        stern.classList.toggle("an", lm.favorit);
+        stern.textContent = lm.favorit ? "★" : "☆";
+        stern.setAttribute("aria-pressed", lm.favorit ? "true" : "false");
+        zeigeMeldung(lm.favorit ? t("favJa") : t("favNein"));
+        if (schnellAnsicht === "favoriten" && !lm.favorit) zeile.remove();
+    });
+    const plus = el("button", "knopf-icon klein schnell-plus", "＋");
+    plus.type = "button";
+    plus.setAttribute("aria-label", t("schnellDazu", { name: anzeigeName(lm) }));
+    plus.addEventListener("click", function () { beimEintragen(lm); blitz(); });
+    zeile.appendChild(knopf);
+    zeile.appendChild(stern);
+    zeile.appendChild(plus);
+    return zeile;
+}
+
 function zeichneSchnellwahl() {
-    const leiste = $("schnellwahl");
-    leiste.innerHTML = "";
-    const ids = [];
-    function dazu(id) { if (ids.indexOf(id) === -1 && findeLebensmittel(id)) ids.push(id); }
-    daten.lebensmittel.forEach(function (lm) { if (lm.favorit) dazu(lm.id); });
-    // zuletzt gegessen: die neuesten Tage zuerst
-    Object.keys(daten.plan).sort().reverse().slice(0, 14).forEach(function (datum) {
-        daten.plan[datum].slice().reverse().forEach(function (e) { dazu(e.lebensmittelId); });
+    const panel = $("schnellPanel");
+    if (!panel) return;
+    $("iconFavoriten").classList.toggle("aktiv", schnellAnsicht === "favoriten");
+    $("iconFavoriten").setAttribute("aria-pressed", schnellAnsicht === "favoriten" ? "true" : "false");
+    $("iconZuletzt").classList.toggle("aktiv", schnellAnsicht === "zuletzt");
+    $("iconZuletzt").setAttribute("aria-pressed", schnellAnsicht === "zuletzt" ? "true" : "false");
+    panel.innerHTML = "";
+    if (!schnellAnsicht || $("tagSuche").value.trim()) { panel.hidden = true; return; }
+    panel.hidden = false;
+    const liste = schnellAnsicht === "favoriten"
+        ? daten.lebensmittel.filter(function (lm) { return lm.favorit; })
+            .sort(function (a, b) { return zuletztRang(b) - zuletztRang(a); })
+        : zuletztListe();
+    const kopf = el("div", "schnell-kopf");
+    kopf.appendChild(el("strong", "", schnellAnsicht === "favoriten" ? "⭐ " + t("filterFav") : "🕘 " + t("zuletztTitel")));
+    const zu = el("button", "knopf-icon klein", "✕");
+    zu.type = "button";
+    zu.setAttribute("aria-label", t("schliessen"));
+    zu.addEventListener("click", function () { schnellAnsicht = null; zeichneSchnellwahl(); });
+    kopf.appendChild(zu);
+    panel.appendChild(kopf);
+    if (!liste.length) {
+        panel.appendChild(el("p", "leer klein", t(schnellAnsicht === "favoriten" ? "leerFavSchnell" : "leerZuletzt")));
+        return;
+    }
+    liste.forEach(function (lm) {
+        panel.appendChild(schnellZeile(lm, function (x, gramm, einheit) { eintragHinzufuegen(x.id, null, gramm, einheit); }));
     });
-    ids.slice(0, 12).forEach(function (id) {
-        const lm = findeLebensmittel(id);
-        const chip = el("button", "schnell-chip");
-        chip.type = "button";
-        chip.appendChild(el("span", "", lm.emoji || "🍽️"));
-        chip.appendChild(el("span", "schnell-name", anzeigeName(lm)));
-        chip.setAttribute("aria-label", t("schnellDazu", { name: anzeigeName(lm) }));
-        chip.addEventListener("click", function () { eintragHinzufuegen(id); });
-        leiste.appendChild(chip);
-    });
-    leiste.hidden = ids.length === 0 || !!$("tagSuche").value.trim();
 }
 
 // Treffer der Suchleiste oben in "Mein Tag": ein Tipp = eingetragen
+// "Skyr 200", "200 g Skyr", "2 Stk Ei", "3 Scheiben Gouda" → Suchtext + Menge
+function mengeAusText(text) {
+    const einheiten = "(g|gr|gramm|grams?|stk\\.?|stück|stueck|st|pcs?|pieces?|scheiben?|slices?|portionen?|scoops?|x)?";
+    const zahl = "(\\d+(?:[.,]\\d+)?)";
+    let m = String(text).match(new RegExp("^\\s*" + zahl + "\\s*" + einheiten + "\\s+(.+)$", "i"));
+    let such, wert, einheit;
+    if (m) { wert = m[1]; einheit = m[2]; such = m[3]; }
+    else {
+        m = String(text).match(new RegExp("^(.+?)\\s+" + zahl + "\\s*" + einheiten + "\\s*$", "i"));
+        if (m) { such = m[1]; wert = m[2]; einheit = m[3]; }
+    }
+    if (!m || /^\d+$/.test(text.trim())) return { such: text, menge: null, stueck: false };
+    const istStueck = /^(stk|stück|stueck|st|pc|piece|scheibe|slice|portion|scoop|x)/i.test(einheit || "");
+    return { such: such.trim(), menge: Number(String(wert).replace(",", ".")), stueck: istStueck };
+}
+
+// Menge in Gramm aus Eingabe (bei Stück: Anzahl × Stückgewicht)
+function mengeInGramm(lm, wert, stueck) {
+    return stueck && lm.stueck ? wert * lm.stueck.g : wert;
+}
+
+// Kleines Feld "Wie viel?" direkt unter dem Treffer – Enter oder ✓ trägt ein
+function mengeFrage(lm, vorgabe, beimFertig) {
+    const box = el("div", "menge-frage");
+    box.appendChild(el("div", "menge-frage-titel", t("wieViel", { name: anzeigeName(lm) })));
+    let stueck = vorgabe && vorgabe.menge ? (vorgabe.stueck && !!lm.stueck) : (!!lm.stueck && lm.letzteEinheit === "stueck");
+    const feld = el("input");
+    feld.type = "text";
+    feld.inputMode = "decimal";
+    feld.enterKeyHint = "done";
+    feld.setAttribute("aria-label", t("grammVon", { name: anzeigeName(lm) }));
+    function vorschlag() {
+        if (vorgabe && vorgabe.menge) return vorgabe.menge;
+        const g = lm.letzteGramm || 100;
+        return stueck ? Math.max(1, Math.round(g / lm.stueck.g * 2) / 2) : g;
+    }
+    feld.value = feldWert(vorschlag());
+    box.appendChild(feld);
+    if (lm.stueck) {
+        const wahl = el("div", "einheit-wahl");
+        [false, true].forEach(function (alsStueck) {
+            const k = el("button", "einheit-option" + (stueck === alsStueck ? " aktiv" : ""), alsStueck ? einheitText(lm.stueck) : "g");
+            k.type = "button";
+            k.addEventListener("click", function () {
+                if (stueck === alsStueck) return;
+                const alt = zahl(feld.value) || 0;
+                stueck = alsStueck;
+                feld.value = feldWert(stueck ? Math.max(1, Math.round(alt / lm.stueck.g * 2) / 2) : Math.round(alt * lm.stueck.g));
+                wahl.querySelectorAll(".einheit-option").forEach(function (x) { x.classList.toggle("aktiv", x === k); });
+                feld.focus();
+            });
+            wahl.appendChild(k);
+        });
+        box.appendChild(wahl);
+    } else {
+        box.appendChild(el("span", "", "g"));
+    }
+    const ok = el("button", "knopf-primaer", t("eintragen"));
+    ok.type = "button";
+    function fertig() {
+        const wert = zahl(feld.value);
+        if (!(wert > 0)) { feld.focus(); return; }
+        beimFertig(mengeInGramm(lm, wert, stueck), stueck ? "stueck" : "g");
+    }
+    ok.addEventListener("click", fertig);
+    feld.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); fertig(); } });
+    box.appendChild(ok);
+    setTimeout(function () { feld.focus(); feld.select(); }, 30);
+    return box;
+}
+
+// Eine Trefferzeile: antippen → "Wie viel?" · ＋ → sofort mit der gewohnten (oder getippten) Menge
+function trefferZeile(lm, vorgabe, beimEintragen) {
+    const wrap = el("div", "treffer-block");
+    const zeile = el("div", "treffer-zeile");
+    const knopf = el("button", "lm-karte");
+    knopf.type = "button";
+    knopf.appendChild(bildElement(lm, "klein"));
+    const info = el("div", "lm-info");
+    const name = el("div", "lm-name", anzeigeName(lm));
+    if (lm.favorit) name.appendChild(el("span", "stern", " ★"));
+    info.appendChild(name);
+    info.appendChild(el("div", "lm-werte", werteText(lm)));
+    knopf.appendChild(info);
+    knopf.addEventListener("click", function () {
+        const offen = wrap.querySelector(".menge-frage");
+        document.querySelectorAll(".menge-frage").forEach(function (x) { x.remove(); });
+        if (offen) return;
+        wrap.appendChild(mengeFrage(lm, vorgabe, function (gramm, einheit) { beimEintragen(lm, gramm, einheit); }));
+    });
+    const plus = el("button", "schnell-plus-direkt", "＋");
+    plus.type = "button";
+    plus.setAttribute("aria-label", t("schnellDazu", { name: anzeigeName(lm) }));
+    plus.addEventListener("click", function () {
+        if (vorgabe && vorgabe.menge) beimEintragen(lm, mengeInGramm(lm, vorgabe.menge, vorgabe.stueck), vorgabe.stueck ? "stueck" : "g");
+        else beimEintragen(lm);
+    });
+    zeile.appendChild(knopf);
+    zeile.appendChild(plus);
+    wrap.appendChild(zeile);
+    return wrap;
+}
+
 function zeichneTagTreffer() {
     const box = $("tagTreffer");
-    const text = $("tagSuche").value;
+    const roh = $("tagSuche").value;
     box.innerHTML = "";
-    if (!text.trim()) { box.hidden = true; return; }
+    if (!roh.trim()) { box.hidden = true; return; }
     box.hidden = false;
+    const vorgabe = mengeAusText(roh);
+    const text = vorgabe.such;
 
     const treffer = gefilterteLebensmittel(text, "alle");
+    if (vorgabe.menge) box.appendChild(el("p", "leer klein", t("mengeErkannt", { menge: format(vorgabe.menge, 1) + (vorgabe.stueck ? " " + t("stueckKurz") : " g") })));
     treffer.slice(0, 8).forEach(function (lm) {
-        const zeile = el("button", "lm-karte");
-        zeile.type = "button";
-        zeile.appendChild(bildElement(lm, "klein"));
-        const info = el("div", "lm-info");
-        const name = el("div", "lm-name", anzeigeName(lm));
-        if (lm.favorit) name.appendChild(el("span", "stern", " ★"));
-        info.appendChild(name);
-        info.appendChild(el("div", "lm-werte", werteText(lm)));
-        zeile.appendChild(info);
-        zeile.appendChild(el("span", "knopf-icon klein", "＋"));
-        zeile.addEventListener("click", function () { tagSucheFertig(lm); });
-        box.appendChild(zeile);
+        box.appendChild(trefferZeile(lm, vorgabe, function (x, gramm, einheit) { tagSucheFertig(x, gramm, einheit); }));
     });
     if (treffer.length > 8) box.appendChild(el("p", "leer klein", t("mehrTreffer", { anzahl: treffer.length - 8 })));
 
@@ -628,14 +848,22 @@ function zeichneTagTreffer() {
     }
     if (text.trim().length >= 2) {
         // Wenig oder nichts gefunden → gleich selbst online weitersuchen
-        box.appendChild(onlineKasten(text, function (lm) { allesZeichnen(); tagSucheFertig(lm); }, treffer.length < 3));
+        box.appendChild(onlineKasten(text, function (lm) {
+            allesZeichnen();
+            if (vorgabe.menge) tagSucheFertig(lm, mengeInGramm(lm, vorgabe.menge, vorgabe.stueck), vorgabe.stueck ? "stueck" : "g");
+            else tagSucheFertig(lm);
+        }, treffer.length < 3));
     }
 }
 
 // Gewählt → eintragen, Suche leeren
-function tagSucheFertig(lm) {
-    $("tagSuche").value = "";
-    eintragHinzufuegen(lm.id);
+function tagSucheFertig(lm, gramm, einheit) {
+    const feld = $("tagSuche");
+    feld.value = "";
+    eintragHinzufuegen(lm.id, null, gramm, einheit);
+    // Gleich weitermachen: Suchfeld bleibt aktiv (Tastatur bleibt offen) für das nächste Lebensmittel
+    feld.focus();
+    zeichneTagTreffer();
 }
 
 
@@ -643,19 +871,22 @@ function tagSucheFertig(lm) {
 // 4. Tagesplan ändern
 // =====================================================
 
-function eintragHinzufuegen(lebensmittelId, mahlzeit) {
+function eintragHinzufuegen(lebensmittelId, mahlzeit, gramm, einheit) {
     mahlzeit = mahlzeit || "tag"; // seit Version 2.0 gibt es nur noch "Mein Tag"
     const lm = findeLebensmittel(lebensmittelId);
     if (!lm) return;
     if (!daten.plan[aktuellesDatum]) daten.plan[aktuellesDatum] = [];
+    lm.zuletzt = Date.now(); // für "Zuletzt"
 
     daten.plan[aktuellesDatum].push({
         id: neueId(),
         mahlzeit: mahlzeit,
         lebensmittelId: lebensmittelId,
-        gramm: lm.letzteGramm || 100,
-        einheit: lm.stueck && lm.letzteEinheit === "stueck" ? "stueck" : undefined
+        gramm: gramm > 0 ? Math.min(Math.round(gramm * 10) / 10, 5000) : (lm.letzteGramm || 100),
+        einheit: einheit ? (einheit === "stueck" && lm.stueck ? "stueck" : undefined)
+            : (lm.stueck && lm.letzteEinheit === "stueck" ? "stueck" : undefined)
     });
+    if (gramm > 0) { lm.letzteGramm = gramm; if (lm.stueck) lm.letzteEinheit = einheit === "stueck" ? "stueck" : "g"; }
     speichern();
     zeichneZusammenfassung();
     zeichnePlan();
@@ -1036,6 +1267,7 @@ function formularSpeichern() {
             emoji: "🍽️",
             favorit: false,
             eigenes: true,
+            zuletzt: Date.now(),
             letzteGramm: menge
         }, werte);
         daten.lebensmittel.push(lm);
@@ -1634,8 +1866,9 @@ function verbinden() {
         knopf.addEventListener("click", function () { tabWechseln(knopf.dataset.tab); });
     });
 
-    $("chipFavoriten").addEventListener("click", function () { lebensmittelMitFilter("favoriten"); });
-    $("chipRezeptbuch").addEventListener("click", function () { lebensmittelMitFilter("rezepte"); });
+    $("iconFavoriten").addEventListener("click", function () { schnellUmschalten("favoriten"); });
+    $("iconZuletzt").addEventListener("click", function () { schnellUmschalten("zuletzt"); });
+    $("iconRezepte").addEventListener("click", function () { lebensmittelMitFilter("rezepte"); });
 
     // Sprache
     document.querySelectorAll(".sprachwahl button").forEach(function (knopf) {
@@ -1664,6 +1897,16 @@ function verbinden() {
         schliesseFenster("dialogNeu");
         oeffneFormular(null);
     });
+    $("neuUebung").addEventListener("click", function () {
+        schliesseFenster("dialogNeu");
+        oeffneSport();
+        oeffneBloecke("einzeln");
+    });
+    $("neuSession").addEventListener("click", function () {
+        schliesseFenster("dialogNeu");
+        oeffneSport();
+        oeffneBloecke("session");
+    });
     $("neuRezept").addEventListener("click", function () {
         schliesseFenster("dialogNeu");
         oeffneRezept(null);
@@ -1687,14 +1930,18 @@ function verbinden() {
     // Suchleiste oben in "Mein Tag"
     $("tagSuche").addEventListener("input", function () {
         zeichneTagTreffer();
-        $("schnellwahl").hidden = !!$("tagSuche").value.trim() || !$("schnellwahl").children.length;
+        zeichneSchnellwahl();
     });
     $("tagSuche").addEventListener("keydown", function (e) {
         // Enter = ersten Treffer eintragen
         if (e.key === "Enter") {
             e.preventDefault();
-            const erster = gefilterteLebensmittel($("tagSuche").value, "alle")[0];
-            if (erster && $("tagSuche").value.trim()) tagSucheFertig(erster);
+            const vorgabe = mengeAusText($("tagSuche").value);
+            const erster = gefilterteLebensmittel(vorgabe.such, "alle")[0];
+            if (erster && vorgabe.such.trim()) {
+                if (vorgabe.menge) tagSucheFertig(erster, mengeInGramm(erster, vorgabe.menge, vorgabe.stueck), vorgabe.stueck ? "stueck" : "g");
+                else tagSucheFertig(erster);
+            }
         }
         if (e.key === "Escape") { $("tagSuche").value = ""; zeichneTagTreffer(); zeichneSchnellwahl(); }
     });
@@ -1703,6 +1950,7 @@ function verbinden() {
         oeffneScanner(function (lm) { allesZeichnen(); eintragHinzufuegen(lm.id); });
     });
     $("knopfSport").addEventListener("click", function () { oeffneSport(); });
+    diktierenVerbinden();
     sportVerbinden();
     kontoVerbinden();
 
@@ -1812,10 +2060,28 @@ gemeinsamAktualisieren(); // neue Lebensmittel/Rezepte "für alle" holen
 (function () {
     const vv = window.visualViewport;
     if (!vv) return;
-    const setzen = function () { document.documentElement.style.setProperty("--sichtbar", Math.round(vv.height) + "px"); };
+    const setzen = function () {
+        const wurzel = document.documentElement.style;
+        wurzel.setProperty("--sichtbar", Math.round(vv.height) + "px");
+        // Wie viel verdeckt die Tastatur unten? Fenster werden genau darüber gesetzt
+        const verdeckt = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop));
+        wurzel.setProperty("--tastatur", verdeckt + "px");
+    };
     vv.addEventListener("resize", setzen);
+    vv.addEventListener("scroll", setzen);
     setzen();
 })();
+
+// In Fenstern: Tippen oder Wischen außerhalb eines Eingabefelds klappt die Tastatur ein,
+// damit man wieder scrollen und alles sehen kann
+document.addEventListener("touchstart", function (e) {
+    const aktiv = document.activeElement;
+    if (!aktiv || !/^(INPUT|TEXTAREA|SELECT)$/.test(aktiv.tagName)) return;
+    const ziel = e.target;
+    if (ziel.closest && ziel.closest("input, textarea, select, label, .menge-steuerung")) return;
+    if (!ziel.closest || !ziel.closest("dialog")) return;
+    aktiv.blur();
+}, { passive: true });
 
 // Kein Zoomen mit zwei Fingern (iPhone-Safari ignoriert "user-scalable=no" sonst)
 ["gesturestart", "gesturechange", "gestureend"].forEach(function (art) {

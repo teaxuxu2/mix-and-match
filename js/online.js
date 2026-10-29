@@ -241,7 +241,7 @@ function onlineUebernehmen(produkt) {
     const vorhanden = daten.lebensmittel.find(function (lm) {
         return lm.id === "off-" + produkt.code || lm.quelle === "openfoodfacts:" + produkt.code;
     });
-    if (vorhanden) return vorhanden;
+    if (vorhanden) { vorhanden.zuletzt = Date.now(); return vorhanden; }
 
     const lm = {
         id: neueId(),
@@ -250,6 +250,7 @@ function onlineUebernehmen(produkt) {
         favorit: false,
         eigenes: true,
         letzteGramm: 100,
+        zuletzt: Date.now(),
         kcal100: produkt.kcal100,
         protein100: produkt.protein100,
         kh100: produkt.kh100,

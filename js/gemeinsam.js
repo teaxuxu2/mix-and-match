@@ -51,6 +51,7 @@ function gemeinsamEinbauen(liste) {
 function gemeinsamAktualisieren() {
     if (typeof wolke === "undefined" || !wolke.konfiguriert() || !wolke.gemeinsamLaden) return Promise.resolve();
     return wolke.gemeinsamLaden().then(function (zeilen) {
+        if (typeof bibVideosEinbauen === "function") bibVideosEinbauen(zeilen); // Übungs-Videos für alle
         const neu = (zeilen || []).map(function (z) { return Object.assign({}, z.daten, { id: z.id }); });
         const alt = JSON.stringify(gemeinsamListe.map(function (e) { const k = Object.assign({}, e); delete k.seit; delete k.quelle; return k; }));
         const vergleich = JSON.stringify(neu.map(function (e) { const k = Object.assign({}, e); delete k.seit; delete k.quelle; return k; }));

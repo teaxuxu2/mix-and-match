@@ -94,6 +94,7 @@ function uebungNormalisieren(u) {
         videoId: u.videoId || null,
         notiz: u.notiz || "",
         blockId: u.blockId || null,
+        bibId: u.bibId || null,        // aus der Übungs-Bibliothek (für Videos "für alle")
         vomTrainer: !!u.vomTrainer
     };
     const zahlOderLeer = function (v) { return v === "" || v === null || v === undefined || isNaN(Number(v)) ? "" : Number(v); };

@@ -1846,7 +1846,8 @@ body[data-tab="profil"] .tab[data-tab="profil"] .nav-icon { filter: none; }
 /* ===== iPhone: nichts oben abschneiden ===== */
 /* Als Web-App (Home-Bildschirm) liegt die Statusleiste über der Seite → Platz lassen */
 /* Version 3.3: weniger Rand – der Bereich unter der Statusleiste ist großzügig, 10 px davon dürfen wir nutzen */
-body { padding-top: max(10px, calc(env(safe-area-inset-top) - 10px)); }
+/* iOS 26 legt oben einen Unschärfe-"Nebel" über den Bereich unter der Statusleiste – nichts darf da drin liegen */
+body { padding-top: max(12px, calc(env(safe-area-inset-top) + 22px)); }
 /* Fenster nie höher als der sichtbare Bereich (auch wenn die Tastatur offen ist) */
 .fenster {
     max-height: calc(var(--sichtbar, 100dvh) - env(safe-area-inset-top) - 12px);
@@ -1881,3 +1882,85 @@ html { -webkit-text-size-adjust: 100%; }
 /* Kein Hineinzoomen: kein Doppeltipp-Zoom, Eingabefelder mind. 16 px (sonst zoomt das iPhone beim Antippen) */
 html, body { touch-action: manipulation; }
 input, select, textarea, .menge-wert input { font-size: 16px !important; }
+
+/* ===== Version 3.4 ===== */
+/* Fenster sitzen immer ÜBER der Tastatur und passen in den sichtbaren Bereich (scrollbar) */
+.fenster[open] {
+    margin-bottom: var(--tastatur, 0px);
+    max-height: calc(var(--sichtbar, 100dvh) - max(env(safe-area-inset-top), 12px) - 8px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+@media (min-width: 900px) { .fenster[open] { margin-bottom: auto; } }
+
+/* Oberer Bereich: Kennzahlen kompakt (Icon + Zahl in einer Zeile) */
+.kpi-zeile { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.kpi-zeile .kpi-icon { margin: 0; font-size: 17px; }
+.kpi-zeile strong { font-size: 18px; }
+.kpi small { font-size: 11px; }
+
+/* Suchleiste + runde Icon-Knöpfe ⭐ 🕘 📖 */
+.tag-oben { gap: 6px; }
+.icon-knopf {
+    flex: none; width: 46px; min-height: 46px; padding: 0;
+    border-radius: 50%; border: 1px solid var(--rand); background: var(--flaeche);
+    font-size: 19px; line-height: 1; display: grid; place-items: center;
+}
+.icon-knopf.aktiv { border-color: var(--akzent); background: rgba(134, 247, 189, 0.14); }
+.tag-oben .tag-suche { padding: 0 10px 0 12px; gap: 6px; }
+.tag-oben .tag-suche input { min-width: 0; }
+@media (max-width: 380px) { .icon-knopf { width: 40px; min-height: 42px; font-size: 17px; } }
+
+.knopf-sport.breit { width: 100%; justify-content: center; min-height: 48px; margin: 2px 0 14px; }
+
+/* Panel ⭐ Favoriten / 🕘 Zuletzt */
+.schnell-panel {
+    margin-bottom: 12px; padding: 8px; border-radius: var(--radius-gross);
+    background: var(--flaeche); border: 1px solid var(--rand);
+    display: flex; flex-direction: column; gap: 6px;
+    max-height: 52vh; overflow-y: auto; overscroll-behavior: contain;
+}
+.schnell-panel[hidden] { display: none; }
+.schnell-kopf { display: flex; justify-content: space-between; align-items: center; padding: 2px 4px 4px; }
+.schnell-zeile { display: flex; align-items: center; gap: 4px; padding: 0 6px 0 0; transition: background 0.3s; }
+.schnell-dazu {
+    flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; text-align: left;
+    padding: 8px; border: none; background: transparent; color: inherit;
+}
+.stern-knopf {
+    flex: none; width: 36px; height: 36px; border: none; background: transparent;
+    color: var(--text-grau); font-size: 21px; line-height: 1;
+}
+.stern-knopf.an { color: #ffd34d; }
+.schnell-zeile.eben-dazu { background: rgba(134, 247, 189, 0.18); }
+
+/* Sport: Kategorien & Vorschläge */
+.kategorie-chips { display: flex; gap: 6px; overflow-x: auto; padding: 8px 0 4px; scrollbar-width: none; }
+.kategorie-chips::-webkit-scrollbar { display: none; }
+.kategorie-chips[hidden] { display: none; }
+.kategorie-chips .chip { flex: none; }
+.bib-kat { margin: 12px 2px 4px; font-weight: 700; color: var(--akzent); }
+.uebung-vorschlaege { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 4px; }
+.uebung-vorschlaege[hidden] { display: none; }
+
+/* Sport-Fenster: groß genug, damit man alles sieht */
+#dialogSport[open] { min-height: min(82vh, calc(var(--sichtbar, 100dvh) - 40px)); }
+.suche-mikro { flex: none; border: none; background: transparent; font-size: 18px; padding: 4px; line-height: 1; }
+.suche-mikro.hoert { animation: mikro-puls 1s ease-in-out infinite; }
+@keyframes mikro-puls { 50% { transform: scale(1.25); } }
+
+/* Menge direkt beim Eintragen */
+.menge-frage {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+    padding: 10px; margin: -2px 0 4px; border-radius: 14px;
+    background: rgba(134, 247, 189, 0.08); border: 1px solid var(--akzent);
+}
+.menge-frage-titel { width: 100%; font-size: 13px; color: var(--text-grau); }
+.menge-frage input {
+    width: 90px; min-height: 42px; padding: 0 12px; border-radius: 12px;
+    border: 1px solid var(--rand); background: var(--eingabe); color: var(--text); font-weight: 700; text-align: right;
+}
+.menge-frage .knopf-primaer { min-height: 42px; padding: 0 16px; margin-left: auto; }
+.treffer-zeile { display: flex; align-items: center; gap: 4px; }
+.treffer-zeile > .lm-karte { flex: 1; min-width: 0; }
+.schnell-plus-direkt { flex: none; width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--akzent); background: transparent; color: var(--akzent); font-size: 20px; }
