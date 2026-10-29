@@ -571,37 +571,7 @@ function zeichnePlan() {
     if (typeof zeichneVorschlaege === "function") zeichneVorschlaege();
 }
 
-// ---------- Diktieren (Spracheingabe) ----------
-// Sagt man z. B. "200 Gramm Skyr", landet "200 g Skyr" in der Suche → Menge wird gleich übernommen.
-// Geht nur, wo der Browser Spracherkennung kann; sonst bleibt das 🎤 der iPhone-Tastatur.
-function diktierenVerbinden() {
-    const Erkennung = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const knopf = $("tagMikro");
-    if (!Erkennung || !knopf) return;
-    knopf.hidden = false;
-    let laeuft = null;
-    knopf.addEventListener("click", function (e) {
-        e.preventDefault();
-        if (laeuft) { laeuft.stop(); return; }
-        const r = new Erkennung();
-        laeuft = r;
-        r.lang = daten.einstellungen.sprache === "en" ? "en-US" : "de-AT";
-        r.interimResults = true;
-        r.maxAlternatives = 1;
-        knopf.classList.add("hoert");
-        r.onresult = function (ev) {
-            let text = "";
-            for (let i = 0; i < ev.results.length; i++) text += ev.results[i][0].transcript;
-            text = text.replace(/\b(gramm|grams?)\b/gi, "g").replace(/\bstück\b/gi, "Stk").trim();
-            $("tagSuche").value = text;
-            zeichneTagTreffer();
-            zeichneSchnellwahl();
-        };
-        r.onerror = function () { zeigeMeldung(t("diktierenFehler"), true); };
-        r.onend = function () { laeuft = null; knopf.classList.remove("hoert"); };
-        try { r.start(); } catch (f) { laeuft = null; knopf.classList.remove("hoert"); }
-    });
-}
+// Diktieren (🎤) steckt jetzt in js/sprache-eingabe.js – für alle Suchfelder.
 
 // ---------- Zuletzt ----------
 // Wann wurde ein Lebensmittel zuletzt benutzt? (angelegt, übernommen, gegessen) – 0 = nie
@@ -1950,7 +1920,7 @@ function verbinden() {
         oeffneScanner(function (lm) { allesZeichnen(); eintragHinzufuegen(lm.id); });
     });
     $("knopfSport").addEventListener("click", function () { oeffneSport(); });
-    diktierenVerbinden();
+    spracheKnoepfeEinbauen(); // 🎤 in allen Suchfeldern (js/sprache-eingabe.js)
     sportVerbinden();
     kontoVerbinden();
 
