@@ -114,7 +114,29 @@ function onlineSuchen(text) {
                 gesehen[p.code] = true;
                 return true;
             })
-            .sort(function (a, b) { return (b.inOesterreich ? 1 : 0) - (a.inOesterreich ? 1 : 0); })
+            .map(function (p) {
+                // Wie gut passt das Produkt wirklich zum Suchtext? (gleiche tolerante Suche wie in der App)
+                if (typeof suchNormal === "function" && !/^\d{8,14}$/.test(such)) {
+                    const woerter = suchNormal(such).split(" ").filter(Boolean);
+                    const text = suchNormal(p.name + " " + p.marke);
+                    const textWoerter = text.split(" ");
+                    let punkte = 0, alle = true;
+                    woerter.forEach(function (w) { const x = wortPunkte(w, text, textWoerter); if (!x) alle = false; punkte += x; });
+                    p.punkte = (alle ? 100 : 0) + punkte;
+                } else {
+                    p.punkte = 0;
+                }
+                return p;
+            })
+            .sort(function (a, b) {
+                if (a.punkte !== b.punkte) return b.punkte - a.punkte;
+                return (b.inOesterreich ? 1 : 0) - (a.inOesterreich ? 1 : 0);
+            })
+            .filter(function (p, i, liste) {
+                // Passen genug Produkte zu ALLEN Wörtern, die unpassenden weglassen
+                const gute = liste.filter(function (x) { return x.punkte >= 100; }).length;
+                return gute >= 3 ? p.punkte >= 100 : true;
+            })
             .slice(0, 20);
     });
 }
