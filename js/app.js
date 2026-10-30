@@ -217,7 +217,7 @@ function appAnleitungVerbinden() {
 }
 
 // Sichtbare Versionsnummer (Profil ganz unten) – so sieht man, ob die neue Version da ist
-const APP_VERSION = "3.9"; // muss gleich sein wie in js/version.json
+const APP_VERSION = "3.10"; // muss gleich sein wie in js/version.json
 
 function zeichneProfil() {
     $("appVersion").textContent = t("appVersion", { nr: APP_VERSION });

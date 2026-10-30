@@ -3,13 +3,13 @@
    Regel: immer zuerst das Neueste aus dem Netz holen; nur wenn das nicht klappt, die gespeicherte Kopie.
    "no-cache" heißt: beim Server nachfragen, ob es Neues gibt (nicht die alte Browser-Kopie nehmen).
    Wohnhaus-Bild: ein Notvorrat im Keller – benutzt wird er nur, wenn der Laden zu hat. */
-const VORRAT = "mmc-vorrat-v12";
+const VORRAT = "mmc-vorrat-v13";
 const DATEIEN = [
     "./", "./index.html", "./manifest.webmanifest", "./css/style.css",
     "./js/texte.js", "./js/startdaten.js", "./js/gemeinsam.js", "./js/influencer.js", "./js/speicher.js",
     "./js/online.js", "./js/scanner.js", "./js/uebungen.js", "./js/sport.js", "./js/wolke-konfig.js", "./js/wolke.js",
     "./js/konto.js", "./js/sprache-eingabe.js", "./js/app.js",
-    "./bilder/icon/icon-192.png", "./bilder/icon/icon-512.png", "./bilder/icon/apple-touch-icon.png",
+    "./bilder/icon/icon-192.png", "./bilder/icon/icon-512.png", "./bilder/icon/apple-touch-icon.png", "./bilder/icon/apple-touch-icon-167.png", "./bilder/icon/apple-touch-icon-152.png",
     "./bilder/influencer/teaxuxu.jpg", "./bilder/influencer/fitfabi.jpg"
 ];
 
