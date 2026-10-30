@@ -195,6 +195,41 @@ function allesZeichnen() {
 }
 
 // Profil-Seite: kurze Infos unter den Einträgen
+// ---------- Wisch-Leisten (Filter usw.) ----------
+// Zeigt mit einer weichen Kante, dass man seitlich wischen kann, und rückt den gewählten Knopf ins Bild.
+// Wohnhaus-Bild: ein langer Gang – das Licht am Ende zeigt, dass da noch Türen kommen.
+function wischKantenSetzen(leiste) {
+    const mehr = leiste.scrollWidth - leiste.clientWidth;
+    leiste.classList.toggle("wisch-links", mehr > 2 && leiste.scrollLeft > 2);
+    leiste.classList.toggle("wisch-rechts", mehr > 2 && leiste.scrollLeft < mehr - 2);
+}
+function insBildRuecken(knopf) {
+    const leiste = knopf.parentElement;
+    if (!leiste || leiste.scrollWidth <= leiste.clientWidth) return;
+    const links = knopf.offsetLeft - leiste.offsetLeft;
+    const ziel = Math.max(0, links - (leiste.clientWidth - knopf.offsetWidth) / 2); // Knopf in die Mitte
+    if (leiste.scrollTo) leiste.scrollTo({ left: ziel, behavior: "smooth" }); else leiste.scrollLeft = ziel;
+}
+function wischLeistenEinrichten() {
+    document.querySelectorAll(".filter, .kategorie-chips").forEach(function (leiste) {
+        if (leiste.dataset.wisch) return;
+        leiste.dataset.wisch = "1";
+        leiste.addEventListener("scroll", function () { wischKantenSetzen(leiste); }, { passive: true });
+        // Wird die Leiste sichtbar (Seitenwechsel) oder neu befüllt → Kanten + gewählten Knopf auffrischen
+        const auffrischen = function () {
+            wischKantenSetzen(leiste);
+            const aktiv = leiste.querySelector(".aktiv");
+            if (aktiv) insBildRuecken(aktiv);
+        };
+        if (window.ResizeObserver) new ResizeObserver(auffrischen).observe(leiste);
+        if (window.MutationObserver) new MutationObserver(function (aenderungen) {
+            if (aenderungen.some(function (m) { return m.type === "childList" || m.target !== leiste; })) auffrischen(); // eigene Kanten-Klassen ignorieren
+        }).observe(leiste, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });
+        auffrischen();
+    });
+}
+window.addEventListener("resize", function () { document.querySelectorAll(".filter, .kategorie-chips").forEach(wischKantenSetzen); });
+
 // ---------- Als App speichern ----------
 // Android/Chrome bietet ein echtes "Installieren" an – das merken wir uns für den Knopf.
 // iPhone kann das nicht per Knopf: dort zeigt das Fenster die Schritte in Safari.
@@ -217,7 +252,7 @@ function appAnleitungVerbinden() {
 }
 
 // Sichtbare Versionsnummer (Profil ganz unten) – so sieht man, ob die neue Version da ist
-const APP_VERSION = "3.10"; // muss gleich sein wie in js/version.json
+const APP_VERSION = "3.11"; // muss gleich sein wie in js/version.json
 
 function zeichneProfil() {
     $("appVersion").textContent = t("appVersion", { nr: APP_VERSION });
@@ -1881,6 +1916,7 @@ function verbinden() {
             document.querySelectorAll(".chip[data-filter]").forEach(function (c) {
                 c.classList.toggle("aktiv", c === chip);
             });
+            insBildRuecken(chip);
             zeichneListe();
         });
     });
@@ -1945,6 +1981,7 @@ function verbinden() {
         oeffneScanner(function (lm) { allesZeichnen(); eintragHinzufuegen(lm.id); });
     });
     $("knopfSport").addEventListener("click", function () { oeffneSport(); });
+    wischLeistenEinrichten(); // Filter-Leisten: weiche Kante + gewählter Knopf ins Bild
     appAnleitungVerbinden(); // 📲 "Als App speichern"
     spracheKnoepfeEinbauen(); // 🎤 in allen Suchfeldern (js/sprache-eingabe.js)
     sportVerbinden();

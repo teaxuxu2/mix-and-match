@@ -1975,3 +1975,30 @@ input, select, textarea, .menge-wert input { font-size: 16px !important; }
 .app-schritte b { color: var(--akzent); font-weight: 600; }
 #appInstallierenJetzt { width: 100%; margin-bottom: 4px; }
 #appInstallierenJetzt[hidden] { display: none; }
+
+/* Wisch-Leisten (Filter, Kategorien): bis an den Bildschirmrand, letzter Knopf mit Abstand,
+   weiche Kante zeigt "da geht's weiter" */
+@media (max-width: 899px) {
+    .filter, .kategorie-chips {
+        margin-left: -16px; margin-right: -16px;
+        padding-left: 16px; padding-right: 16px;
+        scroll-padding-left: 16px; scroll-padding-right: 16px;
+    }
+    .filter::after, .kategorie-chips::after { content: ""; flex: none; width: 1px; } /* Abstand nach dem letzten Knopf */
+    .wisch-rechts { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent); }
+    .wisch-links { -webkit-mask-image: linear-gradient(to left, #000 calc(100% - 40px), transparent); mask-image: linear-gradient(to left, #000 calc(100% - 40px), transparent); }
+    .wisch-links.wisch-rechts { -webkit-mask-image: linear-gradient(to right, transparent, #000 40px, #000 calc(100% - 40px), transparent); mask-image: linear-gradient(to right, transparent, #000 40px, #000 calc(100% - 40px), transparent); }
+}
+
+/* Suche in „Mein Tag“: das Feld bleibt immer mindestens ~170 px breit.
+   Reicht der Platz nicht (kleine Handys), rutschen ⭐ 🕘 📖 in die nächste Zeile. */
+.tag-oben { flex-wrap: wrap; justify-content: flex-end; }
+.tag-oben .tag-suche { flex: 1 1 196px; }
+/* In der schmalen Tages-Suche: Lupe weg (der Platzhalter sagt "suchen"), 🎤 und Scan etwas kompakter */
+.tag-oben .tag-suche > span[aria-hidden="true"] { display: none; }
+.tag-oben .tag-suche .suche-mikro, .tag-oben .tag-suche .suche-scan { width: 32px; height: 36px; }
+.tag-oben .tag-suche .suche-scan { margin-right: -4px; }
+.tag-oben .tag-suche input::-webkit-search-cancel-button { display: none; }
+@media (max-width: 372px) { .tag-oben { gap: 4px; } .icon-knopf { width: 38px; min-height: 42px; font-size: 16px; } }
+/* Sehr kleine Handys: Suche über die ganze Breite, ⭐ 🕘 📖 gemeinsam darunter */
+@media (max-width: 340px) { .tag-oben .tag-suche { flex-basis: 100%; } }
