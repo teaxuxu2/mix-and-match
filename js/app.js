@@ -195,8 +195,29 @@ function allesZeichnen() {
 }
 
 // Profil-Seite: kurze Infos unter den Einträgen
+// ---------- Als App speichern ----------
+// Android/Chrome bietet ein echtes "Installieren" an – das merken wir uns für den Knopf.
+// iPhone kann das nicht per Knopf: dort zeigt das Fenster die Schritte in Safari.
+let appInstallAngebot = null;
+window.addEventListener("beforeinstallprompt", function (e) {
+    e.preventDefault();
+    appInstallAngebot = e;
+});
+function appAnleitungVerbinden() {
+    $("profilAppZeile").addEventListener("click", function () {
+        $("appInstallierenJetzt").hidden = !appInstallAngebot;
+        $("dialogApp").showModal();
+    });
+    $("appInstallierenJetzt").addEventListener("click", function () {
+        if (!appInstallAngebot) return;
+        appInstallAngebot.prompt();
+        appInstallAngebot = null;
+        $("dialogApp").close();
+    });
+}
+
 // Sichtbare Versionsnummer (Profil ganz unten) – so sieht man, ob die neue Version da ist
-const APP_VERSION = "3.6";
+const APP_VERSION = "3.7";
 
 function zeichneProfil() {
     $("appVersion").textContent = t("appVersion", { nr: APP_VERSION });
@@ -1924,6 +1945,7 @@ function verbinden() {
         oeffneScanner(function (lm) { allesZeichnen(); eintragHinzufuegen(lm.id); });
     });
     $("knopfSport").addEventListener("click", function () { oeffneSport(); });
+    appAnleitungVerbinden(); // 📲 "Als App speichern"
     spracheKnoepfeEinbauen(); // 🎤 in allen Suchfeldern (js/sprache-eingabe.js)
     sportVerbinden();
     kontoVerbinden();

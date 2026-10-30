@@ -169,10 +169,11 @@
                         <button type="button" data-sprache="de" lang="de">DE</button>
                     </div>
                 </div>
-                <div class="profil-zeile" id="profilAppZeile" hidden>
+                <button type="button" class="profil-zeile" id="profilAppZeile" hidden>
                     <span class="sport-icon" aria-hidden="true">📲</span>
-                    <span class="sport-info"><strong data-t="appInstallieren">Save as app</strong><small data-t="appInstallierenText">iPhone: Share → “Add to Home Screen”. Android: menu ⋮ → “Install app”.</small></span>
-                </div>
+                    <span class="sport-info"><strong data-t="appInstallieren">Save as app</strong><small data-t="appInstallierenText">Tap for the step-by-step guide</small></span>
+                    <span class="knopf-icon klein" aria-hidden="true">›</span>
+                </button>
             </div>
             <p class="beschreibung" data-t-html="beschreibung">
                 Mix your favorite foods into your perfect day –
@@ -378,6 +379,28 @@
         </div>
         <div id="kontoInhalt" class="konto-inhalt"></div>
         <p id="kontoFehler" class="fehler" role="alert"></p>
+    </dialog>
+
+    <!-- ===== Fenster: Als App speichern (Anleitung) ===== -->
+    <dialog id="dialogApp" class="fenster">
+        <div class="fenster-kopf">
+            <h2 data-t="appInstallieren">Save as app</h2>
+            <button type="button" class="knopf-icon" data-schliessen data-t-aria="schliessen" aria-label="Close">✕</button>
+        </div>
+        <p class="app-warum" data-t="appWarum">Then Mix &amp; Match Cal sits on your home screen like a normal app – full screen, one tap away.</p>
+        <button type="button" class="knopf-primaer breit" id="appInstallierenJetzt" data-t="appJetzt" hidden>Install now</button>
+        <h3 class="app-system" data-t="appIosTitel">iPhone / iPad</h3>
+        <ol class="app-schritte">
+            <li data-t-html="appIos1">If you see a ✕ at the top (link opened from another app): tap ☰ / … → <b>“Open in Safari”</b>.</li>
+            <li data-t-html="appIos2">In Safari tap the <b>Share</b> button (square with arrow ↑) at the bottom.</li>
+            <li data-t-html="appIos3">Scroll down and tap <b>“Add to Home Screen”</b>.</li>
+            <li data-t-html="appIos4">Tap <b>“Add”</b> at the top right – done! Open the app from the new icon from now on.</li>
+        </ol>
+        <h3 class="app-system" data-t="appAndroidTitel">Android</h3>
+        <ol class="app-schritte">
+            <li data-t-html="appAndroid1">Open the page in <b>Chrome</b> and tap the menu <b>⋮</b> at the top right.</li>
+            <li data-t-html="appAndroid2">Tap <b>“Install app”</b> or <b>“Add to Home screen”</b> and confirm.</li>
+        </ol>
     </dialog>
 
     <!-- ===== Fenster: Trainer sieht den Tag einer Sportlerin ===== -->
