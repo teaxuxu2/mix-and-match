@@ -14,6 +14,9 @@
    - Auf dem iPhone wird EIN Zuhörer wiederverwendet (so mag es Safari),
      sonst wird jedes Mal ein neuer gebaut.
 
+   Ab Version 3.8: Am iPhone öffnet das 🎤 immer direkt die Tastatur (Apples Diktat),
+   weil die Browser-Spracherkennung dort im Test bei Ivy gar nicht ging.
+
    Wohnhaus-Bild: die Gegensprechanlage an jeder Tür. Funktioniert sie mal nicht,
    gibt es die Klingel daneben (Tastatur-Diktat).
 */
@@ -81,7 +84,9 @@ function spracheStarten(feld, knopf) {
         if (warGleich) return; // zweiter Tipp auf dasselbe 🎤 = Stopp
     }
     const Erkennung = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!Erkennung || spracheNurTastatur()) { spracheTastatur(feld); return; }
+    // iPhone/iPad: die Browser-Spracherkennung hängt dort oft ("lädt" und nichts passiert).
+    // Darum geht es am iPhone IMMER über die Tastatur – Apples Diktier-🎤 klappt jedes Mal.
+    if (!Erkennung || spracheIstIphone() || spracheNurTastatur()) { spracheTastatur(feld); return; }
 
     const erkennung = spracheZuhoererHolen(Erkennung);
     const englisch = typeof daten !== "undefined" && daten.einstellungen && daten.einstellungen.sprache === "en";
@@ -164,7 +169,7 @@ function spracheStarten(feld, knopf) {
 
 // 🎤-Knopf in jedes Suchfeld (label.suche mit input[type=search]) einbauen
 function spracheKnoepfeEinbauen() {
-    if (!spracheMoeglich()) return; // Browser ohne Spracherkennung: das 🎤 der Tastatur bleibt
+    if (!spracheMoeglich() && !spracheIstIphone()) return; // Browser ohne Spracherkennung: das 🎤 der Tastatur bleibt
     document.querySelectorAll("label.suche").forEach(function (label) {
         const feld = label.querySelector('input[type="search"]');
         if (!feld) return;
