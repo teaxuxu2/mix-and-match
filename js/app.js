@@ -217,7 +217,7 @@ function appAnleitungVerbinden() {
 }
 
 // Sichtbare Versionsnummer (Profil ganz unten) – so sieht man, ob die neue Version da ist
-const APP_VERSION = "3.8";
+const APP_VERSION = "3.9"; // muss gleich sein wie in js/version.json
 
 function zeichneProfil() {
     $("appVersion").textContent = t("appVersion", { nr: APP_VERSION });
@@ -2099,8 +2099,42 @@ document.addEventListener("touchstart", function (e) {
 
 // Als Web-App: Notvorrat anlegen, damit sie auch offline startet (nicht in automatischen Tests)
 if ("serviceWorker" in navigator && location.protocol === "https:" && !navigator.webdriver) {
-    navigator.serviceWorker.register("sw.js").catch(function () { /* egal */ });
+    navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(function (reg) {
+        // Beim Zurückkommen in die App auch den Service Worker auf Neues prüfen
+        document.addEventListener("visibilitychange", function () { if (!document.hidden) reg.update().catch(function () {}); });
+    }).catch(function () { /* egal */ });
 }
+
+// ---------- Automatisch aktualisieren ----------
+// Das iPhone hält die App oft im Speicher und zeigt die alte Version.
+// Darum fragt die App beim Start und bei jedem Zurückkommen: "Gibt es eine neuere Version?"
+// (kleine Datei js/version.json). Wenn ja → neu laden – aber nur, wenn gerade nichts offen ist.
+// Wohnhaus-Bild: der Blick in den Briefkasten beim Heimkommen.
+let updateWartet = false;
+function updateSicherMoeglich() {
+    const offen = document.querySelector("dialog[open]");
+    const tippt = document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);
+    return !offen && !tippt;
+}
+function updatePruefen() {
+    if (!/^https?:$/.test(location.protocol)) return;
+    fetch("js/version.json?t=" + Date.now(), { cache: "no-store" }).then(function (antwort) {
+        return antwort.ok ? antwort.json() : null;
+    }).then(function (info) {
+        if (!info || !info.version || info.version === APP_VERSION) { updateWartet = false; return; }
+        // Schutz vor Endlos-Neuladen: pro neuer Version höchstens 2 Versuche
+        let versuche = 0;
+        try { versuche = Number(sessionStorage.getItem("mmc_update_" + info.version)) || 0; } catch (e) { versuche = 0; }
+        if (versuche >= 2) return;
+        if (!updateSicherMoeglich()) { updateWartet = true; return; }
+        try { sessionStorage.setItem("mmc_update_" + info.version, String(versuche + 1)); } catch (e) { /* egal */ }
+        location.reload();
+    }).catch(function () { /* offline – später nochmal */ });
+}
+updatePruefen();
+document.addEventListener("visibilitychange", function () { if (!document.hidden) updatePruefen(); });
+document.addEventListener("focusout", function () { if (updateWartet) setTimeout(updatePruefen, 500); });
+document.querySelectorAll("dialog").forEach(function (d) { d.addEventListener("close", function () { if (updateWartet) updatePruefen(); }); });
 allesZeichnen();
 
 if (daten.alteUebernommen) {

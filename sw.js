@@ -1,8 +1,9 @@
 /* Mix & Match Calories – Service Worker
    Sorgt dafür, dass die App auch ohne Internet startet (z. B. im Fitnessstudio-Keller).
    Regel: immer zuerst das Neueste aus dem Netz holen; nur wenn das nicht klappt, die gespeicherte Kopie.
+   "no-cache" heißt: beim Server nachfragen, ob es Neues gibt (nicht die alte Browser-Kopie nehmen).
    Wohnhaus-Bild: ein Notvorrat im Keller – benutzt wird er nur, wenn der Laden zu hat. */
-const VORRAT = "mmc-vorrat-v11";
+const VORRAT = "mmc-vorrat-v12";
 const DATEIEN = [
     "./", "./index.html", "./manifest.webmanifest", "./css/style.css",
     "./js/texte.js", "./js/startdaten.js", "./js/gemeinsam.js", "./js/influencer.js", "./js/speicher.js",
@@ -13,7 +14,9 @@ const DATEIEN = [
 ];
 
 self.addEventListener("install", function (e) {
-    e.waitUntil(caches.open(VORRAT).then(function (c) { return c.addAll(DATEIEN); }).catch(function () {}));
+    e.waitUntil(caches.open(VORRAT).then(function (c) {
+        return c.addAll(DATEIEN.map(function (d) { return new Request(d, { cache: "reload" }); }));
+    }).catch(function () {}));
     self.skipWaiting();
 });
 
@@ -26,8 +29,8 @@ self.addEventListener("activate", function (e) {
 self.addEventListener("fetch", function (e) {
     const anfrage = e.request;
     if (anfrage.method !== "GET" || new URL(anfrage.url).origin !== self.location.origin) return; // Online-Speicher etc. nicht anfassen
-    e.respondWith(fetch(anfrage).then(function (antwort) {
-        if (antwort.ok) {
+    e.respondWith(fetch(anfrage, { cache: "no-cache" }).then(function (antwort) {
+        if (antwort.ok && anfrage.url.indexOf("version.json") === -1) {
             const kopie = antwort.clone();
             caches.open(VORRAT).then(function (c) { c.put(anfrage, kopie); });
         }
