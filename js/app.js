@@ -195,6 +195,66 @@ function allesZeichnen() {
 }
 
 // Profil-Seite: kurze Infos unter den Einträgen
+// ---------- Löschen mit zweitem Tipp ----------
+// Erster Tipp: Knopf wird rot und fragt "Wirklich?" – zweiter Tipp (innerhalb von 4 s) löscht.
+// Wohnhaus-Bild: der Sicherheitsriegel – erst entriegeln, dann öffnen.
+function zweiterTipp(knopf, aktion) {
+    knopf.addEventListener("click", function (e) {
+        e.stopPropagation();
+        if (!knopf.classList.contains("sicher")) {
+            knopf.dataset.alt = knopf.textContent;
+            knopf.classList.add("sicher");
+            knopf.textContent = t("wirklichLoeschen");
+            clearTimeout(knopf._uhr);
+            knopf._uhr = setTimeout(function () { knopf.classList.remove("sicher"); knopf.textContent = knopf.dataset.alt; }, 4000);
+            return;
+        }
+        clearTimeout(knopf._uhr);
+        knopf.classList.remove("sicher");
+        knopf.textContent = knopf.dataset.alt;
+        aktion();
+    });
+}
+function loeschKnopfKlein(text, aktion) {
+    const k = el("button", "knopf-loeschen", text || "🗑");
+    k.type = "button";
+    k.setAttribute("aria-label", t("loeschenAria"));
+    zweiterTipp(k, aktion);
+    return k;
+}
+
+// Profil → Daten löschen
+function eigeneLebensmittelLoeschen() {
+    const weg = {};
+    daten.lebensmittel.forEach(function (lm) { if (lm.eigenes) weg[lm.id] = true; });
+    daten.lebensmittel = daten.lebensmittel.filter(function (lm) { return !weg[lm.id]; });
+    Object.keys(daten.plan).forEach(function (d) {
+        daten.plan[d] = daten.plan[d].filter(function (e) { return !weg[e.lebensmittelId]; });
+        if (!daten.plan[d].length) delete daten.plan[d];
+    });
+    speichern(); allesZeichnen();
+    zeigeMeldung(t("geloeschtAnzahl", { anzahl: Object.keys(weg).length }));
+}
+function eigeneUebungenLoeschen() {
+    const anzahl = daten.sport.bloecke.length + daten.sport.pakete.length;
+    daten.sport.bloecke = []; daten.sport.pakete = [];
+    sportSpeichern(); allesZeichnen();
+    zeigeMeldung(t("geloeschtAnzahl", { anzahl: anzahl }));
+}
+function allesLoeschen() {
+    const sprache = daten.einstellungen.sprache;
+    daten = leereDaten();
+    daten.einstellungen.sprache = sprache;
+    daten.bekannteStartIds = STARTDATEN.map(function (s) { return s.id; });
+    daten.lebensmittel = STARTDATEN.map(startLebensmittel);
+    try { indexedDB.deleteDatabase("mmc_videos"); } catch (e) { /* egal */ }
+    speichern();
+    daten = datenLaden();
+    rezepteNeuBerechnen(); allesZeichnen();
+    schliesseFenster("dialogLoeschen");
+    zeigeMeldung(t("allesGeloescht"));
+}
+
 // ---------- Wisch-Leisten (Filter usw.) ----------
 // Zeigt mit einer weichen Kante, dass man seitlich wischen kann, und rückt den gewählten Knopf ins Bild.
 // Wohnhaus-Bild: ein langer Gang – das Licht am Ende zeigt, dass da noch Türen kommen.
@@ -252,7 +312,7 @@ function appAnleitungVerbinden() {
 }
 
 // Sichtbare Versionsnummer (Profil ganz unten) – so sieht man, ob die neue Version da ist
-const APP_VERSION = "4.2"; // muss gleich sein wie in js/version.json
+const APP_VERSION = "4.6"; // muss gleich sein wie in js/version.json
 
 function zeichneProfil() {
     $("appVersion").textContent = t("appVersion", { nr: APP_VERSION });
@@ -521,6 +581,20 @@ function zeichneZusammenfassung() {
     anzeigeAnwenden();
 }
 
+// Kennzahlen-Kacheln (inkl. 👁) auf der Essen-Seite gleich wie auf "Heute":
+// Am Handy wandert derselbe Kachel-Block mit auf die Essen-Seite (nur einer, damit alles gleich bleibt).
+function kennzahlenUmziehen(tab) {
+    const block = $("kpiBereich");
+    const handy = window.innerWidth < 900;
+    if (tab === "foods" && handy) {
+        $("essenKcalZeile").parentNode.insertBefore(block, $("essenKcalZeile"));
+        $("essenKcalZeile").hidden = true;
+    } else {
+        $("kpiAnker").parentNode.insertBefore(block, $("kpiAnker").nextSibling);
+        $("essenKcalZeile").hidden = false;
+    }
+}
+
 // 👁 Anzeige: nur zeigen, was angehakt ist (Kacheln, Essen-Bereich, Training-Bereich)
 function anzeigeAnwenden() {
     const a = daten.einstellungen.anzeige || {};
@@ -632,6 +706,10 @@ function zeichnePlan() {
 
     const kopf = el("div", "mahlzeit-kopf");
     kopf.appendChild(el("h3", "", t("heuteGegessen")));
+    if (eintraegeVon(aktuellesDatum).length) kopf.appendChild(loeschKnopfKlein(t("alleLoeschen"), function () {
+        delete daten.plan[aktuellesDatum];
+        speichern(); zeichneZusammenfassung(); zeichnePlan();
+    }));
     kopf.appendChild(el("span", "", format(summe(aktuellesDatum).kcal) + " kcal"));
     box.appendChild(kopf);
 
@@ -760,7 +838,7 @@ function essenListeAnzeigen() {
     $("lebensmittelListe").hidden = !listeSichtbar || sucht;
     $("listeTitel").hidden = !listeSichtbar || sucht;
     $("listeTitel").textContent = t(filter === "rezepte" ? "listeRezepte" : "listeAlle");
-    $("knopfAlleLm").hidden = sucht || (listeSichtbar && filter === "alle");
+    $("knopfAlleLm").hidden = sucht || (listeSichtbar && filter === "alle") || (!listeSichtbar && !schnellAnsicht); // leer = aufgeräumt
     const rezepteAn = listeSichtbar && filter === "rezepte";
     $("iconRezepte").classList.toggle("aktiv", rezepteAn);
     $("iconRezepte").setAttribute("aria-pressed", rezepteAn ? "true" : "false");
@@ -782,7 +860,7 @@ function zeichneSchnellwahl() {
             .sort(function (a, b) { return zuletztRang(b) - zuletztRang(a); })
         : zuletztListe();
     const kopf = el("div", "schnell-kopf");
-    kopf.appendChild(el("strong", "", schnellAnsicht === "favoriten" ? "⭐ " + t("filterFav") : "🕘 " + t("zuletztTitel")));
+    kopf.appendChild(el("strong", "", schnellAnsicht === "favoriten" ? "⭐ " + t("filterFav") : "🕘 " + t("haeufig")));
     const zu = el("button", "knopf-icon klein", "✕");
     zu.type = "button";
     zu.setAttribute("aria-label", t("schliessen"));
@@ -1924,11 +2002,15 @@ function sicherungEinlesen(datei) {
 // 9. Alles verbinden: Klicks, Eingaben, Start
 // =====================================================
 
+let tabWechselMitFilter = false; // true, wenn z. B. "Dein Rezeptbuch" gleich die Rezepte öffnen soll
 function tabWechseln(tab) {
     document.body.dataset.tab = tab;
     if (tab === "training" && typeof zeichneTraining === "function") zeichneTraining();
     if (tab === "profil") zeichneProfil();
-    if (tab === "foods" && !schnellAnsicht && !listeSichtbar) { schnellAnsicht = "zuletzt"; zeichneSchnellwahl(); }
+    // Essen und Training starten jedes Mal leer (nur Suche, Knöpfe, Neu anlegen) – Listen erst auf Tipp
+    if (tab === "foods" && !tabWechselMitFilter) { schnellAnsicht = null; listeSichtbar = false; zeichneSchnellwahl(); }
+    if (tab === "training" && typeof trainingAnsicht !== "undefined") { trainingAnsicht = null; $("trainingSuche").value = ""; zeichneTraining(); }
+    kennzahlenUmziehen(tab);
     window.scrollTo(0, 0);
 }
 
@@ -1942,7 +2024,9 @@ function lebensmittelMitFilter(neuerFilter) {
     });
     zeichneListe();
     zeichneSchnellwahl();
+    tabWechselMitFilter = true;
     tabWechseln("foods");
+    tabWechselMitFilter = false;
 }
 
 function verbinden() {
@@ -1953,7 +2037,10 @@ function verbinden() {
 
     $("iconFavoriten").addEventListener("click", function () { schnellUmschalten("favoriten"); });
     $("iconZuletzt").addEventListener("click", function () { schnellUmschalten("zuletzt"); });
-    $("iconRezepte").addEventListener("click", function () { lebensmittelMitFilter("rezepte"); });
+    $("iconRezepte").addEventListener("click", function () {
+        if (listeSichtbar && filter === "rezepte") { listeSichtbar = false; zeichneSchnellwahl(); return; } // zweiter Tipp = zu
+        lebensmittelMitFilter("rezepte");
+    });
 
     // Sprache
     document.querySelectorAll(".sprachwahl button").forEach(function (knopf) {
@@ -1982,6 +2069,10 @@ function verbinden() {
     $("knopfRezeptbuch").addEventListener("click", function () { lebensmittelMitFilter("rezepte"); });
     $("knopfAlleLm").addEventListener("click", function () { lebensmittelMitFilter("alle"); });
     document.querySelectorAll("[data-anzeige]").forEach(function (k) { k.addEventListener("click", oeffneAnzeige); });
+    $("knopfDatenLoeschen").addEventListener("click", function () { oeffneFenster("dialogLoeschen"); });
+    zweiterTipp($("loeschenEigeneLm"), eigeneLebensmittelLoeschen);
+    zweiterTipp($("loeschenEigeneUebungen"), eigeneUebungenLoeschen);
+    zweiterTipp($("loeschenAlles"), allesLoeschen);
     document.querySelectorAll("[data-anzeige-wert]").forEach(function (kasten) {
         kasten.addEventListener("change", function () {
             daten.einstellungen.anzeige[kasten.dataset.anzeigeWert] = kasten.checked;
@@ -2162,6 +2253,7 @@ gemeinsamAktualisieren(); // neue Lebensmittel/Rezepte "für alle" holen
     const setzen = function () {
         const wurzel = document.documentElement.style;
         wurzel.setProperty("--sichtbar", Math.round(vv.height) + "px");
+        wurzel.setProperty("--vv-oben", Math.round(vv.offsetTop) + "px"); // so weit ist die Seite nach oben geschoben
         // Wie viel verdeckt die Tastatur unten? Fenster werden genau darüber gesetzt
         const verdeckt = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop));
         wurzel.setProperty("--tastatur", verdeckt + "px");
@@ -2170,6 +2262,19 @@ gemeinsamAktualisieren(); // neue Lebensmittel/Rezepte "für alle" holen
     vv.addEventListener("scroll", setzen);
     setzen();
 })();
+
+// Tastatur geht auf → das angetippte Feld in die Mitte des sichtbaren Bereichs holen (Fenster UND Seite)
+document.addEventListener("focusin", function (e) {
+    const feld = e.target;
+    if (!feld || !/INPUT|TEXTAREA|SELECT/.test(feld.tagName) || feld.type === "checkbox" || feld.type === "file") return;
+    setTimeout(function () {
+        if (document.activeElement !== feld) return;
+        const r = feld.getBoundingClientRect();
+        const vv = window.visualViewport;
+        const oben = vv ? vv.offsetTop : 0, hoehe = vv ? vv.height : window.innerHeight;
+        if (r.top < oben + 60 || r.bottom > oben + hoehe - 20) feld.scrollIntoView({ block: "center", behavior: "smooth" });
+    }, 350); // warten, bis die Tastatur ganz offen ist
+});
 
 // In Fenstern: Tippen oder Wischen außerhalb eines Eingabefelds klappt die Tastatur ein,
 // damit man wieder scrollen und alles sehen kann

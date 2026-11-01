@@ -2118,3 +2118,33 @@ body:not([data-tab="plan"]) .creators { display: none; }
 .training-tag .sport-zeile .sport-info strong, .training-tag .sport-zeile .sport-info small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .training-tag .eintrag-entfernen { flex: none; }
 .training-tag { min-width: 0; overflow: hidden; }
+#trainingAuswahl[hidden] { display: none; }
+
+/* Löschen (v4.4) */
+.knopf-loeschen { flex: none; min-height: 36px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--rand); background: transparent; color: var(--text-grau); font-size: 13px; cursor: pointer; white-space: nowrap; }
+.knopf-loeschen.sicher { background: var(--farbe-fehler); border-color: var(--farbe-fehler); color: #fff; font-weight: 700; }
+.mahlzeit-kopf .knopf-loeschen { margin-left: auto; margin-right: 8px; }
+.schnell-zeile .knopf-loeschen { min-width: 40px; }
+.loeschen-liste { display: grid; gap: 10px; margin-top: 10px; }
+.loeschen-liste .gefahr { border-color: var(--farbe-fehler); color: var(--farbe-fehler); }
+.loeschen-liste .sicher { background: var(--farbe-fehler); border-color: var(--farbe-fehler); color: #fff; }
+#essenKcalZeile[hidden] { display: none; }
+
+/* ===== Version 4.6: Fenster am Handy immer über den ganzen (sichtbaren) Bildschirm =====
+   Die Höhe folgt dem sichtbaren Bereich: geht die Tastatur auf, wird das Fenster kürzer
+   statt hinter der Tastatur zu verschwinden. Wohnhaus-Bild: die Schiebetür passt sich dem Raum an. */
+@media (max-width: 899px) {
+    .fenster[open] {
+        position: fixed; left: 0; right: 0; bottom: auto;
+        top: var(--vv-oben, 0px);
+        width: 100%; max-width: 100%;
+        height: var(--sichtbar, 100dvh); max-height: var(--sichtbar, 100dvh);
+        margin: 0; border: none; border-radius: 0;
+        padding-top: max(16px, env(safe-area-inset-top));
+        padding-bottom: calc(28px + env(safe-area-inset-bottom));
+        overflow-y: auto; overscroll-behavior: contain;
+    }
+    #dialogSport[open] { min-height: 0; }
+    /* Kopf mit ✕ bleibt beim Scrollen oben sichtbar */
+    .fenster[open] .fenster-kopf { position: sticky; top: calc(-1 * max(16px, env(safe-area-inset-top))); z-index: 2; background: var(--flaeche); padding-top: 4px; padding-bottom: 8px; }
+}

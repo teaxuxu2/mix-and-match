@@ -56,7 +56,7 @@
         <section class="bereich bereich-foods">
 
             <h2 class="tag-titel" data-t="essenHinzu">Add food</h2>
-            <div class="kcal-zeile">
+            <div class="kcal-zeile" id="essenKcalZeile">
                 <div class="kcal-mini" id="essenKcal"><span class="kcal-mini-text"><b id="essenKcalIst">0</b> / <span id="essenKcalZiel">2.200</span> kcal</span><span class="kcal-mini-frei" id="essenKcalFrei"></span><span class="kpi-spur"><i id="essenKcalSpur"></i></span></div>
                 <button type="button" class="knopf-auge" data-anzeige data-t-aria="anzeigeTitel" aria-label="What do you want to see?">👁</button>
             </div>
@@ -114,7 +114,8 @@
             </div>
 
             <!-- Kennzahlen: Icon · Zahl · Balken · Ziel (ohne viel Text) -->
-            <div class="kpi-bereich">
+            <span id="kpiAnker" hidden></span>
+            <div class="kpi-bereich" id="kpiBereich">
             <div class="kpis" role="group" data-t-aria="kennzahlen" aria-label="Today's totals">
                 <div class="kpi" id="kpiKcal" style="--farbe: var(--farbe-kcal)">
                     <span class="kpi-zeile"><span class="kpi-icon" aria-hidden="true">🔥</span><strong id="kcalIst">0</strong></span>
@@ -207,6 +208,11 @@
                         <button type="button" data-sprache="de" lang="de">DE</button>
                     </div>
                 </div>
+                <button type="button" class="profil-zeile" id="knopfDatenLoeschen">
+                    <span class="sport-icon" aria-hidden="true">🗑</span>
+                    <span class="sport-info"><strong data-t="datenLoeschen">Delete data</strong><small data-t="datenLoeschenText">Your own foods, exercises – or everything</small></span>
+                    <span class="knopf-icon klein" aria-hidden="true">›</span>
+                </button>
                 <button type="button" class="profil-zeile" id="profilAppZeile" hidden>
                     <span class="sport-icon" aria-hidden="true">📲</span>
                     <span class="sport-info"><strong data-t="appInstallieren">Save as app</strong><small data-t="appInstallierenText">Tap for the step-by-step guide</small></span>
@@ -422,6 +428,20 @@
         </div>
         <div id="kontoInhalt" class="konto-inhalt"></div>
         <p id="kontoFehler" class="fehler" role="alert"></p>
+    </dialog>
+
+    <!-- ===== Fenster: Daten löschen (immer mit zweitem Tipp) ===== -->
+    <dialog id="dialogLoeschen" class="fenster">
+        <div class="fenster-kopf">
+            <h2 data-t="datenLoeschen">Delete data</h2>
+            <button type="button" class="knopf-icon" data-schliessen data-t-aria="schliessen" aria-label="Close">✕</button>
+        </div>
+        <p class="leer klein" data-t="loeschenHinweis">Tap once, then tap again to confirm. Deleted data cannot be restored (if you are signed in, also online).</p>
+        <div class="loeschen-liste">
+            <button type="button" class="knopf-zweit breit" id="loeschenEigeneLm" data-t="loeschenEigeneLm">🗑 Delete my own foods &amp; recipes</button>
+            <button type="button" class="knopf-zweit breit" id="loeschenEigeneUebungen" data-t="loeschenEigeneUebungen">🗑 Delete my exercises &amp; packages</button>
+            <button type="button" class="knopf-zweit breit gefahr" id="loeschenAlles" data-t="loeschenAlles">🗑 Delete everything (fresh start)</button>
+        </div>
     </dialog>
 
     <!-- ===== Fenster: Anzeige – was soll man sehen? (👁) ===== -->

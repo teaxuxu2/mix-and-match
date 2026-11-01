@@ -278,7 +278,7 @@ function zeichneSportTag() {
 // Suche · ⭐ Favoriten · 🕘 Häufig · 📦 Pakete · Neu anlegen · darunter "Heute trainiert"
 // Wohnhaus-Bild: dieselbe Wohnung, nur ein anderes Zimmer – alles liegt am gleichen Platz.
 // =====================================================
-let trainingAnsicht = "haeufig"; // "fav" | "haeufig" | "pakete"
+let trainingAnsicht = null; // null (leer) | "fav" | "haeufig" | "pakete" – startet leer
 
 // Treffer für eine Suche: eigene Übungen zuerst, dann Bibliothek (tolerant)
 function sportTrefferFinden(text) {
@@ -324,7 +324,7 @@ function uebungHaeufigkeit() {
 }
 
 // Eine Zeile zum Eintragen: Tippen oder ＋ = eintragen, ☆ = Favorit (nur bei eigenen Übungen)
-function trainingZeile(zeige, beimEintragen, block) {
+function trainingZeile(zeige, beimEintragen, block, beimLoeschen) {
     const zeile = el("div", "lm-karte schnell-zeile");
     const knopf = el("button", "schnell-dazu");
     knopf.type = "button";
@@ -348,6 +348,7 @@ function trainingZeile(zeige, beimEintragen, block) {
         });
         zeile.appendChild(stern);
     }
+    if (beimLoeschen) zeile.appendChild(loeschKnopfKlein("🗑", beimLoeschen));
     const plus = el("button", "knopf-icon klein schnell-plus", "＋");
     plus.type = "button";
     plus.setAttribute("aria-label", t("uebungDazu", { name: zeige.name }));
@@ -378,7 +379,10 @@ function zeichneTraining() {
         $(p[0]).setAttribute("aria-pressed", an ? "true" : "false");
     });
 
-    if (text) {
+    auswahl.hidden = !text && !trainingAnsicht; // leer starten: nur Suche, Chips, Neu anlegen, Heute trainiert
+    if (!text && !trainingAnsicht) {
+        // nichts gewählt → keine Liste
+    } else if (text) {
         // Suche: eigene Übungen + Bibliothek, unten "als neue Übung anlegen"
         const treffer = sportTrefferFinden(text).slice(0, 15);
         treffer.forEach(function (x) {
@@ -401,6 +405,10 @@ function zeichneTraining() {
                 uebungenUebernehmen(p.uebungen, p.name);
                 zeigeMeldung(t("paketDazu", { name: p.name }));
                 zeichneTraining();
+            }, null, function () {
+                daten.sport.pakete = daten.sport.pakete.filter(function (x) { return x !== p; });
+                sportSpeichern(); zeichneTraining();
+                zeigeMeldung(t("geloescht", { name: p.name }));
             }));
         });
     } else {
@@ -414,7 +422,11 @@ function zeichneTraining() {
         bloecke.forEach(function (b) {
             auswahl.appendChild(trainingZeile(b, function () {
                 const v = uebungKopie(b); v.blockId = b.id; uebungSchnellEintragen(v);
-            }, b));
+            }, b, function () {
+                daten.sport.bloecke = daten.sport.bloecke.filter(function (x) { return x !== b; });
+                sportSpeichern(); zeichneTraining();
+                zeigeMeldung(t("geloescht", { name: b.name }));
+            }));
         });
         if (trainingAnsicht === "fav" && !bloecke.length) auswahl.appendChild(el("p", "leer klein", t("favLeerSport")));
         // Noch wenig Eigenes? Ideen aus der Bibliothek
@@ -434,6 +446,13 @@ function zeichneTraining() {
     const liste = sportVon(aktuellesDatum);
     $("trainingTagTitel").textContent = aktuellesDatum === heuteAlsText() ? t("trainingTagHeute") : t("trainingTagAm", { datum: datumBeschriftung(aktuellesDatum) });
     $("trainingTagAnzahl").textContent = liste.length ? sportTagText(liste) : "";
+    const kopf = $("trainingTagTitel").parentNode;
+    kopf.querySelectorAll(".knopf-loeschen").forEach(function (k) { k.remove(); });
+    if (liste.length) kopf.insertBefore(loeschKnopfKlein(t("alleLoeschen"), function () {
+        liste.forEach(function (u) { videoAufraeumen(u.videoId); });
+        delete daten.sport.tage[aktuellesDatum];
+        sportSpeichern(); zeichneTraining(); zeichneSportTag();
+    }), $("trainingTagAnzahl"));
     const tag = $("trainingTag");
     tag.innerHTML = "";
     if (!liste.length) tag.appendChild(el("p", "leer klein", t("trainingTagLeer")));
@@ -1139,9 +1158,9 @@ function sportVerbinden() {
     $("blockSuche").addEventListener("input", zeichneBloecke);
     $("sportSuche").addEventListener("input", zeichneSport);
     $("trainingSuche").addEventListener("input", zeichneTraining);
-    $("trainingChipFav").addEventListener("click", function () { trainingAnsicht = "fav"; $("trainingSuche").value = ""; zeichneTraining(); });
-    $("trainingChipHaeufig").addEventListener("click", function () { trainingAnsicht = "haeufig"; $("trainingSuche").value = ""; zeichneTraining(); });
-    $("trainingChipPakete").addEventListener("click", function () { trainingAnsicht = "pakete"; $("trainingSuche").value = ""; zeichneTraining(); });
+    $("trainingChipFav").addEventListener("click", function () { trainingAnsicht = trainingAnsicht === "fav" ? null : "fav"; $("trainingSuche").value = ""; zeichneTraining(); });
+    $("trainingChipHaeufig").addEventListener("click", function () { trainingAnsicht = trainingAnsicht === "haeufig" ? null : "haeufig"; $("trainingSuche").value = ""; zeichneTraining(); });
+    $("trainingChipPakete").addEventListener("click", function () { trainingAnsicht = trainingAnsicht === "pakete" ? null : "pakete"; $("trainingSuche").value = ""; zeichneTraining(); });
     $("trainingNeu").addEventListener("click", function () { neueUebung(); });
     $("paketSpeichern").addEventListener("click", paketSpeichernAusTag);
 
