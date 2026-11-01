@@ -354,6 +354,7 @@ function zeichneTraining() {
 // Sport-Fenster: die Session des Tages
 // =====================================================
 function oeffneSport() {
+    $("sportSuche").value = "";
     zeichneSport();
     oeffneFenster("dialogSport");
 }
@@ -387,6 +388,8 @@ function zeichneSport() {
     });
 
     $("sportSessionSpeichern").hidden = uebungen.length === 0;
+
+    if (sportSucheZeichnen()) return; // beim Suchen nur die Treffer zeigen
 
     // Eigene Übungen direkt hier zeigen (zuletzt gemachte zuerst) – ein Tipp trägt ein
     const meine = $("sportMeine");
@@ -425,6 +428,63 @@ function zeichneSport() {
         mehr.addEventListener("click", function () { oeffneBloecke("einzeln"); });
         meine.appendChild(mehr);
     }
+}
+
+// Übungs-Suche im Sport-Fenster: eigene Übungen + Bibliothek, tolerant ("squat", "kniebeuge", "bulgarian")
+// Gibt true zurück, wenn gerade gesucht wird (dann bleiben die Standard-Listen zu).
+function sportSucheZeichnen() {
+    const text = $("sportSuche").value.trim();
+    const box = $("sportSuchTreffer");
+    const meine = $("sportMeine");
+    box.innerHTML = "";
+    box.hidden = !text;
+    if (!text) { meine.hidden = false; return false; }
+    meine.hidden = true;
+    meine.innerHTML = "";
+    $("sportMeineTitel").hidden = true;
+    const woerter = suchNormal(text).split(" ").filter(Boolean);
+    function passt(name, extra) {
+        const ziel = suchNormal(name + " " + (extra || ""));
+        const zielWoerter = ziel.split(" ").filter(Boolean);
+        let summe = 0;
+        for (let i = 0; i < woerter.length; i++) {
+            const p = wortPunkte(woerter[i], ziel, zielWoerter);
+            if (!p) return 0;
+            summe += p;
+        }
+        return summe;
+    }
+    const treffer = [];
+    daten.sport.bloecke.forEach(function (b) {
+        const p = passt(b.name);
+        if (p) treffer.push({ p: p + 5, uebung: function () { const v = uebungKopie(b); v.blockId = b.id; return v; }, zeige: b });
+    });
+    UEBUNG_BIBLIOTHEK.forEach(function (b) {
+        const p = passt(b.de + " " + b.en, b.stichworte);
+        if (p && !treffer.some(function (x) { return x.zeige.name && x.zeige.name.toLowerCase() === bibName(b).toLowerCase(); })) {
+            treffer.push({ p: p, uebung: function () { return bibZuUebung(b); }, zeige: bibZuUebung(b) });
+        }
+    });
+    treffer.sort(function (a, b) { return b.p - a.p; }).slice(0, 15).forEach(function (x) {
+        const zeile = el("div", "sport-eintrag");
+        zeile.appendChild(uebungZeile(x.zeige, function () {
+            vorlageEintragen(x.uebung());
+            $("sportSuche").value = "";
+            zeichneSport();
+        }, "＋"));
+        box.appendChild(zeile);
+    });
+    if (!treffer.length) box.appendChild(el("p", "leer klein", t("sportSucheLeer")));
+    const neu = el("button", "knopf-zweit breit", t("sportSucheNeu", { name: text }));
+    neu.type = "button";
+    neu.addEventListener("click", function () {
+        neueUebung();
+        $("uebungName").value = text;
+        $("uebungName").dispatchEvent(new Event("input", { bubbles: true }));
+        $("sportSuche").value = "";
+    });
+    box.appendChild(neu);
+    return true;
 }
 
 // Name der Session merken (z. B. "HYROX Einheit")
@@ -957,6 +1017,7 @@ function sportVerbinden() {
     $("sessionName").addEventListener("change", sessionNameGeaendert);
     $("sessionName").addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); $("sessionName").blur(); } });
     $("blockSuche").addEventListener("input", zeichneBloecke);
+    $("sportSuche").addEventListener("input", zeichneSport);
 
     // Name getippt → passende Felder vorschlagen (solange man sie nicht selbst gewählt hat)
     $("uebungName").addEventListener("input", function () {

@@ -2094,3 +2094,9 @@ body:not([data-tab="plan"]) .creators { display: none; }
 .rezeptbuch-zeile { align-items: center; }
 #lebensmittelListe[hidden], .schnell-panel[hidden], .tag-treffer[hidden] { display: none; }
 @media (max-width: 359px) { .essen-chip .chip-emo { display: none; } .essen-chip { font-size: 13px; padding: 0 4px; } }
+
+/* Sport-Fenster: Name-Feld beschriftet, eigene Übungs-Suche */
+.feld-titel { display: block; font-size: 13px; color: var(--text-grau); margin: 0 0 4px 2px; }
+.sport-suche { margin: 14px 0 8px; }
+#sportSuchTreffer[hidden], #sportMeine[hidden] { display: none; }
+#sportSuchTreffer .knopf-zweit { margin-top: 8px; }

@@ -329,8 +329,14 @@
             <h2 id="sportTitel">Sport today</h2>
             <button type="button" class="knopf-icon" data-schliessen data-t-aria="schliessen" aria-label="Close">✕</button>
         </div>
+        <label class="feld-titel" for="sessionName" data-t="sessionNameTitel">Session name (optional)</label>
         <input id="sessionName" class="eingabe-name session-name" type="text" maxlength="40" autocomplete="off"
                data-t-ph="sessionNamePh" data-t-aria="sessionNameAria" placeholder="Session name, e.g. HYROX unit" aria-label="Session name">
+        <label class="suche sport-suche">
+            <span aria-hidden="true">🔍</span>
+            <input id="sportSuche" type="search" data-t-ph="sportSuchePh" placeholder="Search exercise …" autocomplete="off" enterkeyhint="search">
+        </label>
+        <div id="sportSuchTreffer" class="sport-liste" hidden></div>
         <div id="sportListe" class="sport-liste"></div>
         <div class="sport-knoepfe">
             <button type="button" class="knopf-primaer" id="sportNeu" data-t="uebungNeu">＋ New exercise</button>
