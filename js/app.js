@@ -252,7 +252,7 @@ function appAnleitungVerbinden() {
 }
 
 // Sichtbare Versionsnummer (Profil ganz unten) – so sieht man, ob die neue Version da ist
-const APP_VERSION = "4.1"; // muss gleich sein wie in js/version.json
+const APP_VERSION = "4.2"; // muss gleich sein wie in js/version.json
 
 function zeichneProfil() {
     $("appVersion").textContent = t("appVersion", { nr: APP_VERSION });
@@ -1981,8 +1981,6 @@ function verbinden() {
     $("knopfPlusEssen").addEventListener("click", function () { tabWechseln("foods"); });
     $("knopfRezeptbuch").addEventListener("click", function () { lebensmittelMitFilter("rezepte"); });
     $("knopfAlleLm").addEventListener("click", function () { lebensmittelMitFilter("alle"); });
-    $("knopfTrainingSession").addEventListener("click", function () { oeffneSport(); });
-    $("knopfTrainingUebung").addEventListener("click", function () { neueUebung(); });
     document.querySelectorAll("[data-anzeige]").forEach(function (k) { k.addEventListener("click", oeffneAnzeige); });
     document.querySelectorAll("[data-anzeige-wert]").forEach(function (kasten) {
         kasten.addEventListener("change", function () {

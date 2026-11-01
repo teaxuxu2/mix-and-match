@@ -158,18 +158,26 @@
 
         <!-- ===== Bereich: Training ===== -->
         <section class="bereich bereich-training">
-            <h2 class="tag-titel" data-t="trainingTitel">My training</h2>
-            <div class="plus-knoepfe">
-                <button type="button" class="knopf-plus-essen" id="knopfTrainingSession"><span aria-hidden="true">＋</span> <span data-t="sessionNeu">Start session</span></button>
-                <button type="button" class="knopf-plus-training" id="knopfTrainingUebung"><span aria-hidden="true">＋</span> <span data-t="uebungAnlegen">New exercise</span></button>
+            <h2 class="tag-titel" data-t="trainingHinzu">Add training</h2>
+            <label class="suche">
+                <span aria-hidden="true">🔍</span>
+                <input id="trainingSuche" type="search" data-t-ph="sportSuchePh" placeholder="Search exercise …" autocomplete="off" enterkeyhint="search">
+            </label>
+            <div class="essen-chips" role="group">
+                <button type="button" class="essen-chip" id="trainingChipFav" aria-pressed="false"><span class="chip-emo" aria-hidden="true">⭐ </span><span data-t="filterFav">Favorites</span></button>
+                <button type="button" class="essen-chip" id="trainingChipHaeufig" aria-pressed="false"><span class="chip-emo" aria-hidden="true">🕘 </span><span data-t="haeufig">Frequent</span></button>
+                <button type="button" class="essen-chip" id="trainingChipPakete" aria-pressed="false"><span class="chip-emo" aria-hidden="true">📦 </span><span data-t="pakete">Packages</span></button>
             </div>
-            <div id="trainingHeute"></div>
-            <h3 class="block-titel" data-t="trainingWoche">Last 7 days</h3>
-            <div id="trainingWoche" class="sport-liste"></div>
-            <h3 class="block-titel" data-t="trainingSessions">Saved sessions</h3>
-            <div id="trainingSessions" class="sport-liste"></div>
-            <h3 class="block-titel" data-t="trainingUebungen">My exercises</h3>
-            <div id="trainingUebungen" class="sport-liste"></div>
+            <button type="button" class="neu-zeile" id="trainingNeu"><span class="neu-plus" aria-hidden="true">＋</span><span class="sport-info"><strong data-t="neuAnlegen">Create new</strong><small data-t="neuUebungKurz">Your own exercise</small></span><span class="knopf-icon klein" aria-hidden="true">›</span></button>
+            <div id="trainingAuswahl" class="liste kompakt training-auswahl"></div>
+            <section class="mahlzeit training-tag">
+                <div class="mahlzeit-kopf"><h3 id="trainingTagTitel">Trained today</h3><span class="mahlzeit-kcal" id="trainingTagAnzahl"></span></div>
+                <div id="trainingTag" class="eintraege"></div>
+                <div class="paket-speichern" id="paketSpeichernBox" hidden>
+                    <input id="paketName" class="eingabe-name" type="text" maxlength="40" autocomplete="off" data-t-ph="paketNamePh" placeholder="Package name, e.g. Leg day">
+                    <button type="button" class="knopf-zweit" id="paketSpeichern" data-t="paketSpeichern">💾 Save as package</button>
+                </div>
+            </section>
         </section>
 
         <!-- ===== Bereich: Profil ===== -->

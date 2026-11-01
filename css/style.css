@@ -2100,3 +2100,21 @@ body:not([data-tab="plan"]) .creators { display: none; }
 .sport-suche { margin: 14px 0 8px; }
 #sportSuchTreffer[hidden], #sportMeine[hidden] { display: none; }
 #sportSuchTreffer .knopf-zweit { margin-top: 8px; }
+
+/* Training-Seite (v4.2) – wie die Essen-Seite */
+.bereich-training .suche { margin-bottom: 10px; }
+.training-auswahl { max-height: 380px; overflow-y: auto; overscroll-behavior: contain; margin-bottom: 14px; border-radius: 16px; }
+.training-auswahl .schnell-zeile .sport-icon { font-size: 22px; }
+.training-auswahl .schnell-dazu { display: flex; align-items: center; gap: 10px; text-align: left; }
+.training-tag { margin-top: 4px; }
+.training-tag .sport-eintrag { display: flex; align-items: center; gap: 6px; }
+.training-tag .sport-eintrag .sport-zeile { flex: 1; min-width: 0; }
+.paket-speichern { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.paket-speichern .eingabe-name { flex: 1 1 160px; min-width: 0; font-size: 16px; }
+.paket-speichern .knopf-zweit { flex: 1 1 auto; }
+.paket-speichern[hidden] { display: none; }
+.training-tag .sport-eintrag { min-width: 0; }
+.training-tag .sport-zeile .sport-info { min-width: 0; flex: 1; }
+.training-tag .sport-zeile .sport-info strong, .training-tag .sport-zeile .sport-info small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.training-tag .eintrag-entfernen { flex: none; }
+.training-tag { min-width: 0; overflow: hidden; }

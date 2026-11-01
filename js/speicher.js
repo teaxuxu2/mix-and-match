@@ -94,6 +94,7 @@ function uebungNormalisieren(u) {
         videoId: u.videoId || null,
         notiz: u.notiz || "",
         blockId: u.blockId || null,
+        favorit: !!u.favorit,
         bibId: u.bibId || null,        // aus der Übungs-Bibliothek (für Videos "für alle")
         vomTrainer: !!u.vomTrainer
     };
