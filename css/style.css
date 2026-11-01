@@ -2002,3 +2002,95 @@ input, select, textarea, .menge-wert input { font-size: 16px !important; }
 @media (max-width: 372px) { .tag-oben { gap: 4px; } .icon-knopf { width: 38px; min-height: 42px; font-size: 16px; } }
 /* Sehr kleine Handys: Suche über die ganze Breite, ⭐ 🕘 📖 gemeinsam darunter */
 @media (max-width: 340px) { .tag-oben .tag-suche { flex-basis: 100%; } }
+
+/* =====================================================
+   Version 4.0 – neues Design (Entwurf v5 von Ivy)
+   ===================================================== */
+.unten-nav { grid-template-columns: repeat(4, 1fr); align-items: center; }
+
+/* Daily Bites nur auf "Heute" – auf den anderen Seiten bleibt oben nur das Logo */
+body:not([data-tab="plan"]) .creators { display: none; }
+@media (min-width: 900px) { body .creators { display: block; } }
+
+/* Kennzahlen + 👁 */
+.kpi-bereich { display: flex; gap: 8px; align-items: stretch; margin-bottom: 12px; }
+.kpi-bereich .kpis { flex: 1; min-width: 0; margin-bottom: 0; }
+.kpis[data-anzahl="1"] { grid-template-columns: 1fr; }
+.kpis[data-anzahl="2"] { grid-template-columns: repeat(2, 1fr); }
+.kpis[data-anzahl="3"] { grid-template-columns: repeat(3, 1fr); }
+.kpis[data-anzahl="0"] { display: none; }
+.kpi[hidden] { display: none; }
+.kpi-frei { display: none; }
+/* Nur eine Kachel → groß, mit "noch … frei" */
+.kpis[data-anzahl="1"] .kpi { padding: 14px 16px; position: relative; }
+.kpis[data-anzahl="1"] .kpi-icon { font-size: 24px; }
+.kpis[data-anzahl="1"] .kpi strong { font-size: 32px; }
+.kpis[data-anzahl="1"] .kpi-zeile { gap: 10px; }
+.kpis[data-anzahl="1"] .kpi-spur { height: 8px; margin: 10px 0 6px; }
+.kpis[data-anzahl="1"] .kpi small { font-size: 14px; }
+.kpis[data-anzahl="1"] #kpiKcal .kpi-frei { display: block; position: absolute; top: 20px; right: 16px; font-size: 13px; font-weight: 600; color: var(--akzent); }
+.kpi-frei.drueber { color: var(--farbe-fehler) !important; }
+.knopf-auge {
+    flex: none; width: 52px; min-height: 52px; border-radius: 16px; border: 1px solid var(--rand);
+    background: var(--flaeche); color: var(--text); font-size: 20px; cursor: pointer;
+}
+.knopf-auge:hover, .knopf-auge:focus-visible { border-color: var(--akzent); }
+
+/* ＋ Essen / ＋ Training */
+.plus-knoepfe { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0 0 16px; }
+.plus-knoepfe button[hidden] { display: none; }
+.plus-knoepfe:has(button[hidden]) { grid-template-columns: 1fr; }
+.knopf-plus-essen, .knopf-plus-training {
+    min-height: 52px; border-radius: 16px; font-size: 16px; font-weight: 700; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.knopf-plus-essen { border: none; background: var(--akzent); color: var(--akzent-text); }
+.knopf-plus-training { border: 1.5px solid var(--rand); background: transparent; color: var(--text); }
+.knopf-plus-essen span[aria-hidden], .knopf-plus-training span[aria-hidden] { font-size: 22px; line-height: 1; }
+
+/* "Heute gegessen": eigenes Scrollen im Kästchen, Seite bleibt kurz */
+.mahlzeiten[hidden], .sport-tag[hidden] { display: none; }
+.mahlzeiten .tagesliste .eintraege, .mahlzeiten .tagesliste > .liste { max-height: 360px; overflow-y: auto; overscroll-behavior: contain; }
+.rezeptbuch-zeile { width: 100%; margin-top: 12px; }
+
+/* Essen-Seite */
+.kcal-zeile { display: flex; gap: 8px; align-items: stretch; margin-bottom: 12px; }
+.kcal-mini {
+    flex: 1; min-width: 0; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 6px 10px;
+    padding: 10px 14px; background: var(--flaeche); border: 1px solid var(--rand); border-radius: 16px;
+}
+.kcal-mini-text { font-size: 14px; color: var(--text-grau); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kcal-mini-text b { color: var(--text); font-size: 16px; }
+.kcal-mini-frei { font-size: 13px; font-weight: 600; color: var(--akzent); white-space: nowrap; }
+.kcal-mini .kpi-spur { grid-column: 1 / -1; height: 6px; }
+.kcal-mini .kpi-spur i { background: var(--akzent); }
+.kcal-zeile .knopf-auge { min-height: 0; }
+.bereich-foods .tag-oben { margin-bottom: 10px; }
+.bereich-foods .tag-oben .tag-suche { flex: 1 1 100%; }
+.bereich-foods .tag-oben .tag-suche > span[aria-hidden="true"] { display: inline; }
+.essen-chips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
+.essen-chip {
+    min-height: 44px; padding: 0 8px; border-radius: 14px; border: 1px solid var(--rand); background: var(--flaeche);
+    color: var(--text); font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.essen-chip.aktiv { background: var(--akzent); border-color: var(--akzent); color: var(--akzent-text); }
+.neu-zeile {
+    width: 100%; display: flex; align-items: center; gap: 12px; text-align: left; margin-bottom: 14px;
+    padding: 10px 14px; border-radius: 16px; border: 1px solid var(--rand); background: var(--flaeche); color: var(--text); cursor: pointer;
+}
+.neu-zeile .neu-plus { font-size: 24px; color: var(--akzent); width: 28px; text-align: center; }
+.neu-zeile strong { color: var(--akzent); }
+.bereich-foods .schnell-panel { margin-top: 0; }
+#knopfAlleLm { display: block; margin: 12px auto 0; }
+#knopfAlleLm[hidden], #listeTitel[hidden], .bereich-foods .suche[hidden], .bereich-foods .filter[hidden] { display: none; }
+
+/* 👁 Fenster */
+.anzeige-liste { display: grid; gap: 4px; margin-bottom: 10px; }
+.anzeige-punkt {
+    display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 0 12px;
+    border-radius: 14px; background: var(--flaeche); border: 1px solid var(--rand); font-size: 16px; cursor: pointer;
+}
+.anzeige-punkt input { width: 22px; height: 22px; accent-color: var(--akzent); margin: 0; }
+.rezeptbuch-zeile { align-items: center; }
+#lebensmittelListe[hidden], .schnell-panel[hidden], .tag-treffer[hidden] { display: none; }
+@media (max-width: 359px) { .essen-chip .chip-emo { display: none; } .essen-chip { font-size: 13px; padding: 0 4px; } }

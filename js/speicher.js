@@ -151,7 +151,9 @@ function leereDaten() {
         lebensmittel: STARTDATEN.map(startLebensmittel),
         plan: {},
         sport: leererSport(),
-        einstellungen: { zielKcal: 2200, zielProtein: 160, zielKh: 250, zielFett: 80, sprache: browserSprache() },
+        einstellungen: { zielKcal: 2200, zielProtein: 160, zielKh: 250, zielFett: 80, sprache: browserSprache(),
+            // 👁 Was man in "Heute" sieht (ab v4.0) – Standard: nur Kalorien, Essen und Training
+            anzeige: { kcal: true, protein: false, fett: false, kh: false, essen: true, sport: true } },
         bekannteStartIds: STARTDATEN.map(function (start) { return start.id; })
     };
 }
@@ -260,6 +262,7 @@ function migrieren(daten) {
     sportNormalisieren(daten.sport);
     const standard = leereDaten().einstellungen;
     daten.einstellungen = Object.assign({}, standard, daten.einstellungen || {});
+    daten.einstellungen.anzeige = Object.assign({}, standard.anzeige, daten.einstellungen.anzeige || {});
 
     daten.lebensmittel.forEach(function (lm) {
         if (!lm.id) lm.id = neueId();

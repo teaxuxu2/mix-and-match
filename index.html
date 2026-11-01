@@ -55,7 +55,31 @@
         <!-- ===== Bereich: Meine Lebensmittel ===== -->
         <section class="bereich bereich-foods">
 
-            <label class="suche">
+            <h2 class="tag-titel" data-t="essenHinzu">Add food</h2>
+            <div class="kcal-zeile">
+                <div class="kcal-mini" id="essenKcal"><span class="kcal-mini-text"><b id="essenKcalIst">0</b> / <span id="essenKcalZiel">2.200</span> kcal</span><span class="kcal-mini-frei" id="essenKcalFrei"></span><span class="kpi-spur"><i id="essenKcalSpur"></i></span></div>
+                <button type="button" class="knopf-auge" data-anzeige data-t-aria="anzeigeTitel" aria-label="What do you want to see?">👁</button>
+            </div>
+            <!-- Eine Suche + Chips: Favoriten · Häufig · Rezepte -->
+            <div class="tag-oben">
+                <label class="suche tag-suche">
+                    <span aria-hidden="true">🔍</span>
+                    <input id="tagSuche" type="search" data-t-ph="tagSuchePh" placeholder="Add food …" autocomplete="off" enterkeyhint="search">
+                    <button type="button" class="suche-mikro" id="tagMikro" data-t-aria="diktieren" data-t-title="diktieren" aria-label="Dictate" title="Dictate" hidden>🎤</button>
+                    <button type="button" class="suche-scan" id="tagScan" data-t-aria="scanOeffnen" data-t-title="scanOeffnen" aria-label="Scan barcode" title="Scan barcode">
+                        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M7 8v8M10 8v8M13 8v8M16.5 8v8" stroke="currentColor" stroke-width="1.6"/></svg>
+                    </button>
+                </label>
+</div>
+            <div class="essen-chips" role="group">
+                <button type="button" class="essen-chip" id="iconFavoriten" aria-pressed="false"><span class="chip-emo" aria-hidden="true">⭐ </span><span data-t="filterFav">Favorites</span></button>
+                <button type="button" class="essen-chip" id="iconZuletzt" aria-pressed="false"><span class="chip-emo" aria-hidden="true">🕘 </span><span data-t="haeufig">Frequent</span></button>
+                <button type="button" class="essen-chip" id="iconRezepte" aria-pressed="false"><span class="chip-emo" aria-hidden="true">📖 </span><span data-t="filterRezepte">Recipes</span></button>
+                        </div>
+            <button type="button" class="neu-zeile" id="knopfNeuKlein"><span class="neu-plus" aria-hidden="true">＋</span><span class="sport-info"><strong data-t="neuAnlegen">Create new</strong><small data-t="neuAnlegenText">Food or recipe</small></span><span class="knopf-icon klein" aria-hidden="true">›</span></button>
+            <div id="tagTreffer" class="tag-treffer liste kompakt" hidden></div>
+            <div id="schnellPanel" class="schnell-panel" hidden></div>
+            <label class="suche" hidden>
                 <span aria-hidden="true">🔍</span>
                 <input id="suche" type="search" data-t-ph="suche" placeholder="Search foods ..." autocomplete="off">
                 <button type="button" class="suche-scan" id="knopfScan" data-t-aria="scanOeffnen" data-t-title="scanOeffnen" aria-label="Scan barcode" title="Scan barcode">
@@ -63,16 +87,17 @@
                 </button>
             </label>
 
-            <div class="filter" role="group">
+            <div class="filter" role="group" hidden>
                 <button type="button" class="chip aktiv" data-filter="alle" data-t="filterAlle">All</button>
                 <button type="button" class="chip" data-filter="favoriten" data-t="filterFav">Favorites</button>
                 <button type="button" class="chip" data-filter="zuletzt" data-t="filterZuletzt">Recent</button>
                 <button type="button" class="chip" data-filter="eigene" data-t="filterEigene">My Foods</button>
                 <button type="button" class="chip" data-filter="rezepte" data-t="filterRezepte">Recipes</button>
-                <button type="button" class="chip chip-plus" id="knopfNeuKlein" data-t-aria="lmHinzu" aria-label="Add food">＋</button>
             </div>
 
+            <h3 class="block-titel" id="listeTitel" hidden></h3>
             <div id="lebensmittelListe" class="liste"></div>
+            <button type="button" class="knopf-link" id="knopfAlleLm" data-t="alleLm">Manage all foods ›</button>
         </section>
 
         <!-- ===== Bereich: Mein Tag ===== -->
@@ -89,11 +114,13 @@
             </div>
 
             <!-- Kennzahlen: Icon · Zahl · Balken · Ziel (ohne viel Text) -->
+            <div class="kpi-bereich">
             <div class="kpis" role="group" data-t-aria="kennzahlen" aria-label="Today's totals">
                 <div class="kpi" id="kpiKcal" style="--farbe: var(--farbe-kcal)">
                     <span class="kpi-zeile"><span class="kpi-icon" aria-hidden="true">🔥</span><strong id="kcalIst">0</strong></span>
                     <span class="kpi-spur"><i></i></span>
                     <small id="kcalZiel">/ 2,200 kcal</small>
+                    <span class="kpi-frei" id="kcalFrei"></span>
                 </div>
                 <div class="kpi" id="kpiProtein" style="--farbe: var(--farbe-protein)">
                     <span class="kpi-zeile"><span class="kpi-icon" aria-hidden="true">💪</span><strong id="proteinIst">0</strong></span>
@@ -111,35 +138,31 @@
                     <small id="khZiel">/ 250 g</small>
                 </div>
             </div>
-
-            <!-- Suchen (mit Scanner) + Icons: Favoriten · Zuletzt · Rezeptbuch -->
-            <div class="tag-oben">
-                <label class="suche tag-suche">
-                    <span aria-hidden="true">🔍</span>
-                    <input id="tagSuche" type="search" data-t-ph="tagSuchePh" placeholder="Add food …" autocomplete="off" enterkeyhint="search">
-                    <button type="button" class="suche-mikro" id="tagMikro" data-t-aria="diktieren" data-t-title="diktieren" aria-label="Dictate" title="Dictate" hidden>🎤</button>
-                    <button type="button" class="suche-scan" id="tagScan" data-t-aria="scanOeffnen" data-t-title="scanOeffnen" aria-label="Scan barcode" title="Scan barcode">
-                        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M7 8v8M10 8v8M13 8v8M16.5 8v8" stroke="currentColor" stroke-width="1.6"/></svg>
-                    </button>
-                </label>
-                <button type="button" class="icon-knopf" id="iconFavoriten" data-t-aria="chipFavoriten" data-t-title="chipFavoriten" aria-label="Favorites" aria-pressed="false">⭐</button>
-                <button type="button" class="icon-knopf" id="iconZuletzt" data-t-aria="zuletztTitel" data-t-title="zuletztTitel" aria-label="Recent" aria-pressed="false">🕘</button>
-                <button type="button" class="icon-knopf" id="iconRezepte" data-t-aria="chipRezeptbuch" data-t-title="chipRezeptbuch" aria-label="Recipe book">📖</button>
+            <button type="button" class="knopf-auge" data-anzeige data-t-aria="anzeigeTitel" aria-label="What do you want to see?">👁</button>
             </div>
-            <div id="tagTreffer" class="tag-treffer liste kompakt" hidden></div>
-            <div id="schnellPanel" class="schnell-panel" hidden></div>
-            <button type="button" class="knopf-sport breit" id="knopfSport">
-                <span aria-hidden="true">🏋️</span><span data-t="sportEintragen">Log a workout</span>
-            </button>
+            <div class="plus-knoepfe">
+                <button type="button" class="knopf-plus-essen" id="knopfPlusEssen"><span aria-hidden="true">＋</span> <span data-t="plusEssen">Food</span></button>
+                <button type="button" class="knopf-plus-training" id="knopfSport"><span aria-hidden="true">＋</span> <span data-t="plusTraining">Training</span></button>
+            </div>
+
 
             <div id="trainerVorschlaege" class="vorschlaege" hidden></div>
             <div id="mahlzeiten" class="mahlzeiten"></div>
             <div id="sportTag" class="sport-tag"></div>
+            <button type="button" class="profil-zeile rezeptbuch-zeile" id="knopfRezeptbuch">
+                <span class="sport-icon" aria-hidden="true">📖</span>
+                <span class="sport-info"><strong data-t="deinRezeptbuch">Your recipe book</strong></span>
+                <span class="knopf-icon klein" aria-hidden="true">›</span>
+            </button>
         </section>
 
         <!-- ===== Bereich: Training ===== -->
         <section class="bereich bereich-training">
-            <h2 class="tag-titel" data-t="tabTraining">Training</h2>
+            <h2 class="tag-titel" data-t="trainingTitel">My training</h2>
+            <div class="plus-knoepfe">
+                <button type="button" class="knopf-plus-essen" id="knopfTrainingSession"><span aria-hidden="true">＋</span> <span data-t="sessionNeu">Start session</span></button>
+                <button type="button" class="knopf-plus-training" id="knopfTrainingUebung"><span aria-hidden="true">＋</span> <span data-t="uebungAnlegen">New exercise</span></button>
+            </div>
             <div id="trainingHeute"></div>
             <h3 class="block-titel" data-t="trainingWoche">Last 7 days</h3>
             <div id="trainingWoche" class="sport-liste"></div>
@@ -156,6 +179,11 @@
                 <button type="button" class="profil-zeile" id="knopfKonto">
                     <span class="sport-icon" aria-hidden="true">👤</span>
                     <span class="sport-info"><strong data-t="kontoTitel">Account &amp; coach</strong><small id="profilKontoText"></small></span>
+                    <span class="knopf-icon klein" aria-hidden="true">›</span>
+                </button>
+                <button type="button" class="profil-zeile" data-anzeige>
+                    <span class="sport-icon" aria-hidden="true">👁</span>
+                    <span class="sport-info"><strong data-t="anzeigeZeile">Display</strong><small data-t="anzeigeZeileText">Choose what you see on your day</small></span>
                     <span class="knopf-icon klein" aria-hidden="true">›</span>
                 </button>
                 <button type="button" class="profil-zeile" id="knopfEinstellungen">
@@ -187,9 +215,8 @@
 
     <!-- ===== Leiste unten: Tag · Lebensmittel · ＋ · Training · Profil ===== -->
     <nav class="unten-nav" aria-label="Sections">
-        <button type="button" class="tab" data-tab="plan"><span class="nav-icon" aria-hidden="true">🏠</span><span class="nav-text" data-t="tabTag">My Day</span></button>
-        <button type="button" class="tab" data-tab="foods"><span class="nav-icon" aria-hidden="true">🥑</span><span class="nav-text" data-t="tabFoods">Foods</span></button>
-        <button type="button" class="nav-plus" id="knopfNeu" data-t-aria="neu" aria-label="Add"><span aria-hidden="true">＋</span></button>
+        <button type="button" class="tab" data-tab="plan"><span class="nav-icon" aria-hidden="true">🏠</span><span class="nav-text" data-t="tabHeute">Today</span></button>
+        <button type="button" class="tab" data-tab="foods"><span class="nav-icon" aria-hidden="true">🍽️</span><span class="nav-text" data-t="tabEssen">Food</span></button>
         <button type="button" class="tab" data-tab="training"><span class="nav-icon" aria-hidden="true">🏋️</span><span class="nav-text" data-t="tabTraining">Training</span></button>
         <button type="button" class="tab" data-tab="profil"><span class="nav-icon" aria-hidden="true">👤</span><span class="nav-text" data-t="tabProfil">Profile</span><span class="nav-punkt" id="navKontoPunkt" hidden></span></button>
     </nav>
@@ -381,6 +408,27 @@
         </div>
         <div id="kontoInhalt" class="konto-inhalt"></div>
         <p id="kontoFehler" class="fehler" role="alert"></p>
+    </dialog>
+
+    <!-- ===== Fenster: Anzeige – was soll man sehen? (👁) ===== -->
+    <dialog id="dialogAnzeige" class="fenster">
+        <div class="fenster-kopf">
+            <h2 data-t="anzeigeTitel">What do you want to see?</h2>
+            <button type="button" class="knopf-icon" data-schliessen data-t-aria="schliessen" aria-label="Close">✕</button>
+        </div>
+        <h3 class="block-titel" data-t="anzeigeWerte">Values</h3>
+        <div class="anzeige-liste">
+            <label class="anzeige-punkt"><input type="checkbox" data-anzeige-wert="kcal"> 🔥 <span data-t="kcalName">Calories</span></label>
+            <label class="anzeige-punkt"><input type="checkbox" data-anzeige-wert="protein"> 💪 <span data-t="protein">Protein</span></label>
+            <label class="anzeige-punkt"><input type="checkbox" data-anzeige-wert="fett"> 🧈 <span data-t="fett">Fat</span></label>
+            <label class="anzeige-punkt"><input type="checkbox" data-anzeige-wert="kh"> 🍞 <span data-t="kh">Carbs</span></label>
+        </div>
+        <h3 class="block-titel" data-t="anzeigeBereiche">Sections</h3>
+        <div class="anzeige-liste">
+            <label class="anzeige-punkt"><input type="checkbox" data-anzeige-wert="essen"> 🍽️ <span data-t="anzeigeEssen">Food</span></label>
+            <label class="anzeige-punkt"><input type="checkbox" data-anzeige-wert="sport"> 🏋️ <span data-t="anzeigeSport">Training</span></label>
+        </div>
+        <p class="leer klein" data-t="anzeigeHinweis">Also in your profile under “Display”.</p>
     </dialog>
 
     <!-- ===== Fenster: Als App speichern (Anleitung) ===== -->

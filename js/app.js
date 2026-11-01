@@ -252,7 +252,7 @@ function appAnleitungVerbinden() {
 }
 
 // Sichtbare Versionsnummer (Profil ganz unten) – so sieht man, ob die neue Version da ist
-const APP_VERSION = "3.11"; // muss gleich sein wie in js/version.json
+const APP_VERSION = "4.0"; // muss gleich sein wie in js/version.json
 
 function zeichneProfil() {
     $("appVersion").textContent = t("appVersion", { nr: APP_VERSION });
@@ -507,6 +507,42 @@ function zeichneZusammenfassung() {
     setzeKennzahl("kpiProtein", s.protein, z.zielProtein);
     setzeKennzahl("kpiFett", s.fett, z.zielFett);
     setzeKennzahl("kpiKh", s.kh, z.zielKh);
+
+    // "noch 900 frei" (oder "120 drüber")
+    const rest = Math.round(z.zielKcal - s.kcal);
+    const freiText = rest >= 0 ? t("kcalFrei", { n: format(rest) }) : t("kcalDrueber", { n: format(-rest) });
+    $("kcalFrei").textContent = freiText;
+    $("kcalFrei").classList.toggle("drueber", rest < 0);
+    // kleine Kalorien-Leiste auf der Essen-Seite
+    $("essenKcalIst").textContent = format(s.kcal);
+    $("essenKcalZiel").textContent = format(z.zielKcal);
+    $("essenKcalFrei").textContent = freiText;
+    $("essenKcalSpur").style.width = Math.min(100, z.zielKcal ? s.kcal / z.zielKcal * 100 : 0) + "%";
+    anzeigeAnwenden();
+}
+
+// 👁 Anzeige: nur zeigen, was angehakt ist (Kacheln, Essen-Bereich, Training-Bereich)
+function anzeigeAnwenden() {
+    const a = daten.einstellungen.anzeige || {};
+    let sichtbar = 0;
+    [["kpiKcal", "kcal"], ["kpiProtein", "protein"], ["kpiFett", "fett"], ["kpiKh", "kh"]].forEach(function (p) {
+        $(p[0]).hidden = !a[p[1]];
+        if (a[p[1]]) sichtbar++;
+    });
+    const kpis = document.querySelector(".kpis");
+    kpis.dataset.anzahl = sichtbar;
+    $("mahlzeiten").hidden = !a.essen;
+    $("knopfPlusEssen").hidden = !a.essen;
+    $("sportTag").hidden = !a.sport;
+    $("knopfSport").hidden = !a.sport;
+}
+
+function oeffneAnzeige() {
+    const a = daten.einstellungen.anzeige;
+    document.querySelectorAll("[data-anzeige-wert]").forEach(function (kasten) {
+        kasten.checked = !!a[kasten.dataset.anzeigeWert];
+    });
+    oeffneFenster("dialogAnzeige");
 }
 
 // Ein Eintrag im Tagesplan: Bild, Name, Werte, − Menge +, ✕
@@ -663,6 +699,7 @@ let schnellAnsicht = null; // null | "favoriten" | "zuletzt"
 
 function schnellUmschalten(ansicht) {
     schnellAnsicht = schnellAnsicht === ansicht ? null : ansicht;
+    if (schnellAnsicht) listeSichtbar = false;
     zeichneSchnellwahl();
 }
 
@@ -716,9 +753,23 @@ function schnellZeile(lm, beimEintragen) {
     return zeile;
 }
 
+// Essen-Seite: Häufig/Favoriten (Schnell-Liste) ODER Rezepte/alle Lebensmittel (große Liste)
+let listeSichtbar = false;
+function essenListeAnzeigen() {
+    const sucht = !!$("tagSuche").value.trim();
+    $("lebensmittelListe").hidden = !listeSichtbar || sucht;
+    $("listeTitel").hidden = !listeSichtbar || sucht;
+    $("listeTitel").textContent = t(filter === "rezepte" ? "listeRezepte" : "listeAlle");
+    $("knopfAlleLm").hidden = sucht || (listeSichtbar && filter === "alle");
+    const rezepteAn = listeSichtbar && filter === "rezepte";
+    $("iconRezepte").classList.toggle("aktiv", rezepteAn);
+    $("iconRezepte").setAttribute("aria-pressed", rezepteAn ? "true" : "false");
+}
+
 function zeichneSchnellwahl() {
     const panel = $("schnellPanel");
     if (!panel) return;
+    essenListeAnzeigen();
     $("iconFavoriten").classList.toggle("aktiv", schnellAnsicht === "favoriten");
     $("iconFavoriten").setAttribute("aria-pressed", schnellAnsicht === "favoriten" ? "true" : "false");
     $("iconZuletzt").classList.toggle("aktiv", schnellAnsicht === "zuletzt");
@@ -1877,16 +1928,20 @@ function tabWechseln(tab) {
     document.body.dataset.tab = tab;
     if (tab === "training" && typeof zeichneTraining === "function") zeichneTraining();
     if (tab === "profil") zeichneProfil();
+    if (tab === "foods" && !schnellAnsicht && !listeSichtbar) { schnellAnsicht = "zuletzt"; zeichneSchnellwahl(); }
     window.scrollTo(0, 0);
 }
 
 // Lebensmittel-Seite mit einem bestimmten Filter öffnen (Favoriten, Rezeptbuch)
 function lebensmittelMitFilter(neuerFilter) {
     filter = neuerFilter;
+    listeSichtbar = true;
+    schnellAnsicht = null;
     document.querySelectorAll(".chip[data-filter]").forEach(function (c) {
         c.classList.toggle("aktiv", c.dataset.filter === neuerFilter);
     });
     zeichneListe();
+    zeichneSchnellwahl();
     tabWechseln("foods");
 }
 
@@ -1922,7 +1977,20 @@ function verbinden() {
     });
 
     // Neues Lebensmittel
-    $("knopfNeu").addEventListener("click", function () { oeffneFenster("dialogNeu"); });
+    // (＋ in der Leiste gibt es ab v4.0 nicht mehr – "Neu anlegen" sitzt auf der Essen-Seite)
+    $("knopfPlusEssen").addEventListener("click", function () { tabWechseln("foods"); });
+    $("knopfRezeptbuch").addEventListener("click", function () { lebensmittelMitFilter("rezepte"); });
+    $("knopfAlleLm").addEventListener("click", function () { lebensmittelMitFilter("alle"); });
+    $("knopfTrainingSession").addEventListener("click", function () { oeffneSport(); });
+    $("knopfTrainingUebung").addEventListener("click", function () { neueUebung(); });
+    document.querySelectorAll("[data-anzeige]").forEach(function (k) { k.addEventListener("click", oeffneAnzeige); });
+    document.querySelectorAll("[data-anzeige-wert]").forEach(function (kasten) {
+        kasten.addEventListener("change", function () {
+            daten.einstellungen.anzeige[kasten.dataset.anzeigeWert] = kasten.checked;
+            speichern();
+            anzeigeAnwenden();
+        });
+    });
     $("knopfNeuKlein").addEventListener("click", function () { oeffneFenster("dialogNeu"); });
     $("neuLebensmittel").addEventListener("click", function () {
         schliesseFenster("dialogNeu");
