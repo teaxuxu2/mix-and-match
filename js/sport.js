@@ -257,11 +257,13 @@ function zeichneSportTag() {
     const uebungen = el("div", "sport-karte-liste");
     liste.forEach(function (u) {
         const zeile = el("div", "sport-eintrag" + (u.erledigt ? " erledigt" : ""));
+        zeile.dataset.sortId = u.id;
         zeile.appendChild(abhakKnopf(u));
         zeile.appendChild(uebungZeile(u, function () { oeffneUebung(u.id); }));
         zeile.appendChild(entfernKnopf(u));
         uebungen.appendChild(zeile);
     });
+    sortierbarMachen(uebungen, uebungenSortieren); // lange drücken → verschieben
     karte.appendChild(uebungen);
 
     const knoepfe = el("div", "sport-karte-knoepfe");
@@ -349,6 +351,15 @@ function abhakKnopf(u) {
     });
     return k;
 }
+// Neue Reihenfolge der Übungen des Tages speichern (nach Lange-drücken-und-ziehen)
+function uebungenSortieren(ids) {
+    const liste = sportVon(aktuellesDatum);
+    daten.sport.tage[aktuellesDatum] = ids.map(function (id) { return liste.find(function (u) { return u.id === id; }); }).filter(Boolean)
+        .concat(liste.filter(function (u) { return ids.indexOf(u.id) === -1; }));
+    sportSpeichern();
+    zeichneSportTag();
+}
+
 // Übung aus dem Tag nehmen (✕ auf der Heute-Karte und in "Heute trainiert")
 function uebungAusTagEntfernen(id) {
     const liste = sportVon(aktuellesDatum);
@@ -516,6 +527,7 @@ function zeichneTraining() {
     if (!liste.length) tag.appendChild(el("p", "leer klein", t("trainingTagLeer")));
     liste.forEach(function (u, nummer) {
         const zeile = el("div", "sport-eintrag" + (u.erledigt ? " erledigt" : ""));
+        zeile.dataset.sortId = u.id;
         zeile.appendChild(abhakKnopf(u));
         zeile.appendChild(uebungZeile(u, function () { oeffneUebung(u.id); }));
         const weg = el("button", "eintrag-entfernen", "✕");
@@ -532,6 +544,7 @@ function zeichneTraining() {
         zeile.appendChild(weg);
         tag.appendChild(zeile);
     });
+    if (!tag.dataset.sortierbar) { tag.dataset.sortierbar = "1"; sortierbarMachen(tag, uebungenSortieren); } // lange drücken → verschieben
     $("paketSpeichernBox").hidden = !liste.length;
     if (document.activeElement !== $("paketName")) $("paketName").value = sessionNameVon(aktuellesDatum);
 }

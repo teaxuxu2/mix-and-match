@@ -195,6 +195,85 @@ function allesZeichnen() {
 }
 
 // Profil-Seite: kurze Infos unter den Einträgen
+// ---------- Sortieren: lange drücken, dann ziehen ----------
+// Hält man eine Box ~0,4 s gedrückt, "hebt" sie sich an und lässt sich nach oben/unten schieben.
+// Kurz antippen und normales Wischen (Scrollen) funktionieren wie immer.
+// Wohnhaus-Bild: Möbel umstellen – erst anheben, dann an den neuen Platz stellen.
+let sortierenAktiv = null; // { liste, zeile, startY, ... }
+function sortierbarMachen(liste, beimSortieren) {
+    let uhr = null, start = null, gezogen = false;
+    function zeilen() { return Array.prototype.slice.call(liste.children).filter(function (z) { return z.dataset.sortId; }); }
+    function abbrechen() { clearTimeout(uhr); uhr = null; }
+    function beenden() {
+        abbrechen();
+        if (!sortierenAktiv || sortierenAktiv.liste !== liste) return;
+        const s = sortierenAktiv;
+        sortierenAktiv = null;
+        s.zeile.classList.remove("wird-gezogen");
+        s.zeile.style.transform = "";
+        zeilen().forEach(function (z) { z.style.transform = ""; });
+        liste.classList.remove("sortiert-gerade");
+        const reihenfolge = zeilen().map(function (z) { return z.dataset.sortId; });
+        const von = reihenfolge.indexOf(s.zeile.dataset.sortId);
+        const nach = s.ziel;
+        if (gezogen && nach !== von) {
+            reihenfolge.splice(nach, 0, reihenfolge.splice(von, 1)[0]);
+            beimSortieren(reihenfolge);
+        }
+    }
+    liste.addEventListener("touchstart", function (e) {
+        const zeile = e.target.closest("[data-sort-id]");
+        if (!zeile || zeile.parentNode !== liste || e.touches.length !== 1) return;
+        start = { y: e.touches[0].clientY, x: e.touches[0].clientX };
+        gezogen = false;
+        abbrechen();
+        uhr = setTimeout(function () {
+            const alle = zeilen();
+            sortierenAktiv = { liste: liste, zeile: zeile, startY: start.y, hoehen: alle.map(function (z) { const r = z.getBoundingClientRect(); return { z: z, mitte: r.top + r.height / 2, hoehe: r.height }; }), ziel: alle.indexOf(zeile) };
+            zeile.classList.add("wird-gezogen");
+            liste.classList.add("sortiert-gerade");
+            if (navigator.vibrate) navigator.vibrate(15);
+        }, 400);
+    }, { passive: true });
+    liste.addEventListener("touchmove", function (e) {
+        if (!e.touches[0]) return;
+        if (!sortierenAktiv) {
+            // vor dem Anheben bewegt → es ist Scrollen, kein Sortieren
+            if (start && (Math.abs(e.touches[0].clientY - start.y) > 8 || Math.abs(e.touches[0].clientX - start.x) > 8)) abbrechen();
+            return;
+        }
+        if (sortierenAktiv.liste !== liste) return;
+        e.preventDefault(); // Seite nicht scrollen, solange gezogen wird
+        gezogen = true;
+        const s = sortierenAktiv;
+        const dy = e.touches[0].clientY - s.startY;
+        s.zeile.style.transform = "translateY(" + dy + "px)";
+        const meine = s.hoehen.find(function (h) { return h.z === s.zeile; });
+        const neueMitte = meine.mitte + dy;
+        const vonIndex = s.hoehen.indexOf(meine);
+        let ziel = 0;
+        s.hoehen.forEach(function (h, i) { if (h.z !== s.zeile && neueMitte > h.mitte) ziel = i < vonIndex ? i + 1 : i; });
+        if (neueMitte < s.hoehen[0].mitte) ziel = 0;
+        s.ziel = Math.max(0, Math.min(s.hoehen.length - 1, ziel));
+        // die anderen Boxen machen Platz
+        s.hoehen.forEach(function (h, i) {
+            if (h.z === s.zeile) return;
+            let verschieben = 0;
+            if (vonIndex < s.ziel && i > vonIndex && i <= s.ziel) verschieben = -meine.hoehe - 6;
+            if (vonIndex > s.ziel && i < vonIndex && i >= s.ziel) verschieben = meine.hoehe + 6;
+            h.z.style.transform = verschieben ? "translateY(" + verschieben + "px)" : "";
+        });
+    }, { passive: false });
+    liste.addEventListener("touchend", function (e) {
+        if (sortierenAktiv && sortierenAktiv.liste === liste && gezogen) e.preventDefault(); // kein Klick nach dem Ziehen
+        beenden();
+    });
+    liste.addEventListener("touchcancel", beenden);
+    // Nach dem Anheben ohne Ziehen: der folgende Klick soll nichts öffnen
+    liste.addEventListener("click", function (e) { if (liste.classList.contains("sortiert-gerade")) { e.preventDefault(); e.stopPropagation(); } }, true);
+    liste.addEventListener("contextmenu", function (e) { if (e.target.closest("[data-sort-id]")) e.preventDefault(); });
+}
+
 // ---------- Löschen mit zweitem Tipp ----------
 // Erster Tipp: Knopf wird rot und fragt "Wirklich?" – zweiter Tipp (innerhalb von 4 s) löscht.
 // Wohnhaus-Bild: der Sicherheitsriegel – erst entriegeln, dann öffnen.
@@ -312,7 +391,7 @@ function appAnleitungVerbinden() {
 }
 
 // Sichtbare Versionsnummer (Profil ganz unten) – so sieht man, ob die neue Version da ist
-const APP_VERSION = "5.2"; // muss gleich sein wie in js/version.json
+const APP_VERSION = "5.3"; // muss gleich sein wie in js/version.json
 
 function zeichneProfil() {
     $("appVersion").textContent = t("appVersion", { nr: APP_VERSION });

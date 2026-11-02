@@ -2259,3 +2259,9 @@ body:not([data-tab="plan"]) .creators { display: none; }
     .fenster[open] #mengeEintragen,
     .fenster[open] form > .knopf-primaer.breit { position: static; box-shadow: none; }
 }
+
+/* ===== Version 5.3: Übungen sortieren (lange drücken, ziehen) ===== */
+[data-sort-id] { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; transition: transform 0.15s ease; }
+[data-sort-id].wird-gezogen { transition: none; position: relative; z-index: 5; transform-origin: center; box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45); border-radius: 16px; }
+[data-sort-id].wird-gezogen .sport-zeile { outline: 2px solid var(--akzent); }
+.sortiert-gerade { touch-action: none; }
