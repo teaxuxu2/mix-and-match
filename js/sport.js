@@ -222,8 +222,10 @@ function uebungZeile(u, beimTippen, rechts) {
 // =====================================================
 // "Mein Tag": Sport-Karte unter dem Essen
 // =====================================================
+function zeichneSportTagNurKarte() { sportTagOhneTraining = true; zeichneSportTag(); sportTagOhneTraining = false; }
+let sportTagOhneTraining = false;
 function zeichneSportTag() {
-    if (typeof zeichneTraining === "function" && $("trainingAuswahl")) zeichneTraining(); // Training-Seite immer mit aktuell halten
+    if (!sportTagOhneTraining && typeof zeichneTraining === "function" && $("trainingAuswahl")) zeichneTraining(); // Training-Seite immer mit aktuell halten
     const box = $("sportTag");
     if (!box) return;
     box.innerHTML = "";
@@ -235,7 +237,7 @@ function zeichneSportTag() {
     const kopf = el("div", "mahlzeit-kopf");
     kopf.appendChild(el("h3", "", "🏋️ " + t("sportSessions")));
     text.appendChild(kopf);
-    text.appendChild(el("p", "sport-karte-name", liste.length ? (name || t("sport")) + " · " + sportTagText(liste) : t("sportLeer")));
+    text.appendChild(el("p", "sport-karte-name", liste.length ? (name || t("sport")) + " · " + erledigtText(liste) : t("sportLeer")));
     oben.appendChild(text);
     // Vorschaubild: erstes Übungsvideo der Session (liegt auf dem Gerät)
     const mitVideo = liste.find(function (u) { return u.videoId; });
@@ -253,7 +255,13 @@ function zeichneSportTag() {
     karte.appendChild(oben);
 
     const uebungen = el("div", "sport-karte-liste");
-    liste.forEach(function (u) { uebungen.appendChild(uebungZeile(u, function () { oeffneUebung(u.id); })); });
+    liste.forEach(function (u) {
+        const zeile = el("div", "sport-eintrag" + (u.erledigt ? " erledigt" : ""));
+        zeile.appendChild(abhakKnopf(u));
+        zeile.appendChild(uebungZeile(u, function () { oeffneUebung(u.id); }));
+        zeile.appendChild(entfernKnopf(u));
+        uebungen.appendChild(zeile);
+    });
     karte.appendChild(uebungen);
 
     const knoepfe = el("div", "sport-karte-knoepfe");
@@ -264,7 +272,11 @@ function zeichneSportTag() {
     knoepfe.appendChild(oeffnen);
     const uebernehmen = el("button", "knopf-link", t("sessionUebernehmenKurz"));
     uebernehmen.type = "button";
-    uebernehmen.addEventListener("click", function () { oeffneBloecke("session"); });
+    uebernehmen.addEventListener("click", function () {
+        tabWechseln("training");
+        trainingAnsicht = "pakete";
+        zeichneTraining();
+    });
     knoepfe.appendChild(uebernehmen);
     karte.appendChild(knoepfe);
     box.appendChild(karte);
@@ -323,6 +335,43 @@ function uebungHaeufigkeit() {
     return { zahl: zahl, zuletzt: zuletzt };
 }
 
+// ✓ Abhaken wie eine To-do-Liste (gilt nur für den Tag, nicht für gespeicherte Übungen/Pakete)
+function abhakKnopf(u) {
+    const k = el("button", "abhaken" + (u.erledigt ? " an" : ""), u.erledigt ? "✓" : "");
+    k.type = "button";
+    k.setAttribute("aria-pressed", u.erledigt ? "true" : "false");
+    k.setAttribute("aria-label", t(u.erledigt ? "abhakenNein" : "abhakenJa", { name: u.name }));
+    k.addEventListener("click", function (e) {
+        e.stopPropagation();
+        u.erledigt = !u.erledigt;
+        sportSpeichern();
+        zeichneSportTag(); // zeichnet auch die Training-Seite neu
+    });
+    return k;
+}
+// Übung aus dem Tag nehmen (✕ auf der Heute-Karte und in "Heute trainiert")
+function uebungAusTagEntfernen(id) {
+    const liste = sportVon(aktuellesDatum);
+    const u = liste.find(function (x) { return x.id === id; });
+    if (!u) return;
+    daten.sport.tage[aktuellesDatum] = liste.filter(function (x) { return x.id !== id; });
+    if (!daten.sport.tage[aktuellesDatum].length) delete daten.sport.tage[aktuellesDatum];
+    sportSpeichern();
+    videoAufraeumen(u.videoId);
+    zeichneSportTag();
+}
+function entfernKnopf(u) {
+    const weg = el("button", "eintrag-entfernen", "✕");
+    weg.type = "button";
+    weg.setAttribute("aria-label", t("entfernen", { name: u.name }));
+    weg.addEventListener("click", function (e) { e.stopPropagation(); uebungAusTagEntfernen(u.id); });
+    return weg;
+}
+function erledigtText(liste) {
+    const fertig = liste.filter(function (u) { return u.erledigt; }).length;
+    return t("erledigtVon", { fertig: fertig, alle: liste.length });
+}
+
 // Eine Zeile zum Eintragen: Tippen oder ＋ = eintragen, ☆ = Favorit (nur bei eigenen Übungen)
 function trainingZeile(zeige, beimEintragen, block, beimLoeschen) {
     const zeile = el("div", "lm-karte schnell-zeile");
@@ -359,7 +408,16 @@ function trainingZeile(zeige, beimEintragen, block, beimLoeschen) {
 
 // Übung schnell eintragen (ohne Fenster) – Details später per Tipp in "Heute trainiert"
 function uebungSchnellEintragen(vorlage) {
+    // Gleich als eigene Übung merken (für Häufig und ☆) – gleicher Name = gleiche Übung
+    let block = vorlage.blockId ? daten.sport.bloecke.find(function (b) { return b.id === vorlage.blockId; }) : null;
+    if (!block) block = daten.sport.bloecke.find(function (b) { return b.name.toLowerCase() === vorlage.name.toLowerCase(); });
+    if (!block) {
+        block = Object.assign(uebungKopie(vorlage), { id: neueId(), blockId: null, vomTrainer: false, favorit: false });
+        daten.sport.bloecke.push(block);
+    }
+    vorlage.blockId = block.id;
     vorlage.id = neueId();
+    vorlage.erledigt = false;
     if (!daten.sport.tage[aktuellesDatum]) daten.sport.tage[aktuellesDatum] = [];
     daten.sport.tage[aktuellesDatum].push(vorlage);
     sportSpeichern();
@@ -445,7 +503,7 @@ function zeichneTraining() {
     // Unten: was heute eingetragen ist – Tippen = Details, ✕ = löschen
     const liste = sportVon(aktuellesDatum);
     $("trainingTagTitel").textContent = aktuellesDatum === heuteAlsText() ? t("trainingTagHeute") : t("trainingTagAm", { datum: datumBeschriftung(aktuellesDatum) });
-    $("trainingTagAnzahl").textContent = liste.length ? sportTagText(liste) : "";
+    $("trainingTagAnzahl").textContent = liste.length ? erledigtText(liste) : "";
     const kopf = $("trainingTagTitel").parentNode;
     kopf.querySelectorAll(".knopf-loeschen").forEach(function (k) { k.remove(); });
     if (liste.length) kopf.insertBefore(loeschKnopfKlein(t("alleLoeschen"), function () {
@@ -457,7 +515,8 @@ function zeichneTraining() {
     tag.innerHTML = "";
     if (!liste.length) tag.appendChild(el("p", "leer klein", t("trainingTagLeer")));
     liste.forEach(function (u, nummer) {
-        const zeile = el("div", "sport-eintrag");
+        const zeile = el("div", "sport-eintrag" + (u.erledigt ? " erledigt" : ""));
+        zeile.appendChild(abhakKnopf(u));
         zeile.appendChild(uebungZeile(u, function () { oeffneUebung(u.id); }));
         const weg = el("button", "eintrag-entfernen", "✕");
         weg.type = "button";
@@ -642,8 +701,9 @@ function sessionSpeichern() {
     const name = sessionNameVon(aktuellesDatum) || t("sessionStandardname", { datum: datumBeschriftung(aktuellesDatum) });
     const vorhanden = daten.sport.pakete.find(function (p) { return p.name.toLowerCase() === name.toLowerCase(); });
     const alteVideos = vorhanden ? vorhanden.uebungen.map(function (u) { return u.videoId; }) : [];
-    if (vorhanden) vorhanden.uebungen = uebungen.map(uebungKopie);
-    else daten.sport.pakete.push({ id: neueId(), name: name.slice(0, 40), uebungen: uebungen.map(uebungKopie) });
+    const ohneHaken = function (u) { const k = uebungKopie(u); k.erledigt = false; return k; };
+    if (vorhanden) vorhanden.uebungen = uebungen.map(ohneHaken);
+    else daten.sport.pakete.push({ id: neueId(), name: name.slice(0, 40), uebungen: uebungen.map(ohneHaken) });
     if (sportSpeichern()) zeigeMeldung(t(vorhanden ? "sessionAktualisiert" : "sessionGespeichert", { name: name }));
     alteVideos.forEach(videoAufraeumen);
 }
@@ -654,6 +714,7 @@ function uebungenUebernehmen(vorlagen, name) {
     vorlagen.forEach(function (v) {
         const u = uebungKopie(v);
         u.id = neueId();
+        u.erledigt = false;
         daten.sport.tage[aktuellesDatum].push(u);
     });
     if (name && !sessionNameVon(aktuellesDatum)) daten.sport.sessionNamen[aktuellesDatum] = name;
@@ -1104,7 +1165,7 @@ function uebungSpeichern() {
     if (!block) { block = { id: neueId() }; daten.sport.bloecke.push(block); }
     const altesBlockVideo = block.videoId;
     const warFavorit = !!block.favorit; // ⭐ bleibt beim Speichern erhalten
-    Object.assign(block, uebungKopie(u), { blockId: null, vomTrainer: false, favorit: warFavorit });
+    Object.assign(block, uebungKopie(u), { blockId: null, vomTrainer: false, favorit: warFavorit, erledigt: false });
     u.blockId = block.id;
 
     // In den Tag eintragen bzw. dort ersetzen
@@ -1163,6 +1224,14 @@ function sportVerbinden() {
     $("trainingChipPakete").addEventListener("click", function () { trainingAnsicht = trainingAnsicht === "pakete" ? null : "pakete"; $("trainingSuche").value = ""; zeichneTraining(); });
     $("trainingNeu").addEventListener("click", function () { neueUebung(); });
     $("paketSpeichern").addEventListener("click", paketSpeichernAusTag);
+    // Name sofort merken – sonst springt das Feld beim nächsten Neuzeichnen auf den alten Namen zurück
+    $("paketName").addEventListener("input", function () {
+        const name = $("paketName").value.trim().slice(0, 40);
+        if (name) daten.sport.sessionNamen[aktuellesDatum] = name;
+        else delete daten.sport.sessionNamen[aktuellesDatum];
+        sportSpeichern();
+        if ($("sportTag")) { const alt = document.activeElement; zeichneSportTagNurKarte(); if (alt && alt.focus) alt.focus(); }
+    });
 
     // Name getippt → passende Felder vorschlagen (solange man sie nicht selbst gewählt hat)
     $("uebungName").addEventListener("input", function () {

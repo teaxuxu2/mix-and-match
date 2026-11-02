@@ -2148,3 +2148,99 @@ body:not([data-tab="plan"]) .creators { display: none; }
     /* Kopf mit ✕ bleibt beim Scrollen oben sichtbar */
     .fenster[open] .fenster-kopf { position: sticky; top: calc(-1 * max(16px, env(safe-area-inset-top))); z-index: 2; background: var(--flaeche); padding-top: 4px; padding-bottom: 8px; }
 }
+
+/* ===== Version 4.7: Daily Bites mit Überschrift (wie Entwurf v5) =====
+   Logo oben, darunter „Daily Bites – Was andere essen. Neue Ideen für dich.“, dann die Kreise.
+   So ist klar: das sind Inspirationen, nicht die Macher der App. */
+@media (max-width: 899px) {
+    body[data-tab="plan"] .kopf { flex-direction: column; align-items: stretch; gap: 14px; }
+    .kopf .creators-titel, .kopf .creators-unter {
+        position: static; width: auto; height: auto; overflow: visible; clip: auto; white-space: normal;
+    }
+    .kopf .creators-titel { margin: 0; font-size: 20px; font-weight: 700; color: var(--text); }
+    .kopf .creators-unter { margin: 2px 0 8px; font-size: 14px; color: var(--text-grau); }
+    .kopf .story-leiste { justify-content: flex-start; }
+}
+
+/* ===== Version 4.8: Speichern immer sichtbar (auch mit Tastatur), Hintergrund nicht durchscheinen ===== */
+@media (max-width: 899px) {
+    .fenster::backdrop { background: var(--hintergrund); }
+    .fenster[open] .fenster-aktionen,
+    .fenster[open] #uebungSpeichern,
+    .fenster[open] form > .knopf-primaer.breit {
+        position: sticky; bottom: 0; z-index: 3;
+        box-shadow: 0 -14px 18px 6px var(--flaeche);
+    }
+    .fenster[open] .fenster-aktionen { background: var(--flaeche); padding: 8px 0 4px; margin-bottom: 0; }
+}
+
+/* ===== Version 4.9: Mengen-Fenster ===== */
+.menge-lm { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 16px; background: var(--flaeche-hell); border: 1px solid var(--rand); margin-bottom: 16px; }
+.menge-lm .lm-info { min-width: 0; }
+.menge-eingabe { display: grid; grid-template-columns: 64px 1fr 64px; gap: 10px; align-items: center; }
+.menge-knopf { height: 60px; border-radius: 18px; border: 1px solid var(--rand); background: var(--flaeche-hell); color: var(--text); font-size: 30px; font-weight: 600; cursor: pointer; }
+.menge-knopf:active { background: var(--akzent); color: var(--akzent-text); }
+#mengeWert { height: 60px; width: 100%; min-width: 0; text-align: center; font-size: 30px; font-weight: 700; border-radius: 18px; border: 1px solid var(--akzent); background: var(--hintergrund); color: var(--text); }
+.menge-einheit { display: flex; justify-content: center; margin: 12px auto 0; width: fit-content; }
+.menge-einheit[hidden] { display: none; }
+.menge-schnell { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 14px 0; }
+.menge-chip { min-height: 42px; border-radius: 12px; border: 1px solid var(--rand); background: var(--flaeche); color: var(--text); font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.menge-chip.aktiv { background: var(--akzent); border-color: var(--akzent); color: var(--akzent-text); }
+.menge-vorschau { display: grid; gap: 4px; text-align: center; padding: 12px; border-radius: 16px; background: var(--flaeche-hell); margin-bottom: 14px; }
+.menge-vorschau strong { font-size: 22px; }
+.menge-vorschau span, .menge-vorschau small { color: var(--text-grau); font-size: 14px; }
+@media (max-width: 359px) { .menge-chip { font-size: 12px; } .menge-eingabe { grid-template-columns: 54px 1fr 54px; } }
+
+/* ===== Version 5.0: Tastatur-Hausordnung + Feinschliff ===== */
+@media (max-width: 899px) {
+    /* Tastatur offen → Leiste unten weg (schwebt sonst über der Tastatur und verdeckt Treffer) */
+    body.tastatur .unten-nav { display: none; }
+    body.tastatur { padding-bottom: 75vh; } /* Platz, damit das Suchfeld ganz nach oben geschoben werden kann */
+    /* Mengen-Fenster: Eintragen klebt unten, bei wenig Platz kompakter */
+    .fenster[open] #mengeEintragen { position: sticky; bottom: 0; z-index: 3; box-shadow: 0 -14px 18px 6px var(--flaeche); }
+}
+@media (max-width: 899px) and (max-height: 560px) {
+    .menge-lm { padding: 8px; margin-bottom: 10px; }
+    .menge-schnell { margin: 8px 0; }
+    .menge-vorschau { padding: 8px; margin-bottom: 8px; }
+    .menge-vorschau strong { font-size: 18px; }
+    .menge-knopf, #mengeWert { height: 52px; }
+    .fenster[open] { padding-bottom: 12px; }
+}
+#mengeEintragen:disabled { opacity: 0.45; }
+
+/* 4 Kacheln nebeneinander: Zahlen passen immer (auch 1.850 kcal) */
+.kpis[data-anzahl="4"] .kpi { padding: 8px 6px 7px; }
+.kpis[data-anzahl="4"] .kpi strong { font-size: 15px; }
+.kpis[data-anzahl="4"] .kpi-icon { font-size: 14px; margin-bottom: 2px; }
+.kpis[data-anzahl="4"] .kpi small { font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: clip; max-width: 100%; }
+.kpis[data-anzahl="4"] .kpi-zeile { gap: 3px; }
+.kpis[data-anzahl="3"] .kpi strong { font-size: 18px; }
+
+/* Meldungen oben statt unten – verdecken weder neue Einträge noch die Tastatur */
+.meldung { bottom: auto; top: calc(10px + env(safe-area-inset-top)); width: max-content; max-width: calc(100% - 32px); text-align: center; transform: translate(-50%, -12px); }
+.meldung.sichtbar { transform: translate(-50%, 0); }
+.kpis[data-anzahl="4"] .kpi-zeile { flex-direction: column; align-items: flex-start; gap: 1px; }
+.kpis[data-anzahl="4"] .kpi-einheit-text { display: none; }
+/* Meldung oben: unteren Rand sicher aufheben (ältere Regel setzt bottom mit !important) */
+.meldung { bottom: auto !important; height: auto; }
+.neu-karte[hidden] { display: none; }
+
+/* ===== Version 5.1: Übungen abhaken (To-do) + Scrollen ohne Hängen ===== */
+.abhaken {
+    flex: none; width: 34px; height: 34px; border-radius: 10px; border: 2px solid #2f8f62;
+    background: transparent; color: #fff; font-size: 18px; font-weight: 800; line-height: 1; cursor: pointer;
+    display: grid; place-items: center;
+}
+.abhaken.an { background: #2f8f62; }
+.bereich-training .abhaken { border-color: var(--akzent); }
+.bereich-training .abhaken.an { background: var(--akzent); color: var(--akzent-text); }
+.sport-eintrag.erledigt .sport-zeile strong { text-decoration: line-through; opacity: 0.7; }
+.sport-karte .sport-eintrag { margin-bottom: 6px; }
+.sport-karte .sport-eintrag .sport-zeile { margin-bottom: 0; }
+/* Keine Scroll-Fallen mehr: Listen laufen mit der Seite mit (iPhone blieb im inneren Kästchen hängen) */
+.training-auswahl { max-height: none; overflow: visible; }
+.mahlzeiten .tagesliste .eintraege, .mahlzeiten .tagesliste > .liste, .tag-treffer { overscroll-behavior: auto; }
+.tag-treffer { max-height: none; overflow: visible; }
+#trainingAuswahl, #tagTreffer, #auswahlListe.liste.kompakt { max-height: none; overflow: visible; } /* keine Scroll-Fallen im Kästchen – die Seite scrollt */
+.sport-karte .eintrag-entfernen { flex: none; color: #0b3b26; }

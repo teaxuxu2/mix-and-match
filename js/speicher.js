@@ -95,6 +95,7 @@ function uebungNormalisieren(u) {
         notiz: u.notiz || "",
         blockId: u.blockId || null,
         favorit: !!u.favorit,
+        erledigt: !!u.erledigt, // ✓ abgehakt (To-do-Liste)
         bibId: u.bibId || null,        // aus der Übungs-Bibliothek (für Videos "für alle")
         vomTrainer: !!u.vomTrainer
     };

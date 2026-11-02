@@ -20,7 +20,7 @@ let bearbeiteId = null;       // null = neues Lebensmittel, sonst id des bearbei
 let formularFoto = null;      // verkleinertes Foto im Formular (Text/data-URL)
 let auswahlModus = "plan";    // "plan" = für den Tagesplan, "rezept" = Zutat für ein Rezept
 let rezeptEntwurf = null;     // das Rezept, das gerade im Rezept-Fenster bearbeitet wird
-let nachFormularSpeichern = null; // was nach dem Speichern eines neuen Lebensmittels passieren soll
+let nachFormularSpeichern = null; // was nach dem Speichern eines neuen Lebensmittels passieren soll (wird beim Schließen zurückgesetzt)
 
 
 // =====================================================
@@ -312,7 +312,7 @@ function appAnleitungVerbinden() {
 }
 
 // Sichtbare Versionsnummer (Profil ganz unten) – so sieht man, ob die neue Version da ist
-const APP_VERSION = "4.6"; // muss gleich sein wie in js/version.json
+const APP_VERSION = "5.1"; // muss gleich sein wie in js/version.json
 
 function zeichneProfil() {
     $("appVersion").textContent = t("appVersion", { nr: APP_VERSION });
@@ -556,7 +556,8 @@ function zeichneZusammenfassung() {
     $("datumText").textContent = datumBeschriftung(aktuellesDatum);
 
     $("kcalIst").textContent = format(s.kcal);
-    $("kcalZiel").textContent = "/ " + format(z.zielKcal) + " kcal";
+    $("kcalZiel").innerHTML = "";
+    $("kcalZiel").append("/ " + format(z.zielKcal), el("span", "kpi-einheit-text", " kcal")); // " kcal" fällt bei 4 Kacheln weg
     $("proteinIst").textContent = format(s.protein);
     $("proteinZiel").textContent = "/ " + format(z.zielProtein) + " g";
     $("fettIst").textContent = format(s.fett);
@@ -593,6 +594,11 @@ function kennzahlenUmziehen(tab) {
         $("kpiAnker").parentNode.insertBefore(block, $("kpiAnker").nextSibling);
         $("essenKcalZeile").hidden = false;
     }
+    // "Heute gegessen" auch dort zeigen, wo man einträgt
+    const tagListe = $("mahlzeiten");
+    if (tab === "foods" && handy) $("essenTagAnker").parentNode.insertBefore(tagListe, $("essenTagAnker"));
+    else $("mahlzeitenAnker").parentNode.insertBefore(tagListe, $("mahlzeitenAnker").nextSibling);
+    anzeigeAnwenden();
 }
 
 // 👁 Anzeige: nur zeigen, was angehakt ist (Kacheln, Essen-Bereich, Training-Bereich)
@@ -605,7 +611,7 @@ function anzeigeAnwenden() {
     });
     const kpis = document.querySelector(".kpis");
     kpis.dataset.anzahl = sichtbar;
-    $("mahlzeiten").hidden = !a.essen;
+    $("mahlzeiten").hidden = !a.essen && document.body.dataset.tab !== "foods"; // auf der Essen-Seite immer sichtbar
     $("knopfPlusEssen").hidden = !a.essen;
     $("sportTag").hidden = !a.sport;
     $("knopfSport").hidden = !a.sport;
@@ -645,7 +651,7 @@ function eintragKarte(eintrag) {
     eingabe.inputMode = "decimal";
     // Stück statt Gramm? (z. B. 2 Stk. Ei) – gespeichert wird immer in Gramm
     const stueck = lm.stueck && eintrag.einheit === "stueck" ? lm.stueck : null;
-    const schritt = stueck ? stueck.g : 10;
+    const schritt = stueck ? stueck.g / 2 : 1; // 1 g bzw. ½ Stück
     eingabe.value = stueck ? feldWert(Math.round(eintrag.gramm / stueck.g * 2) / 2) : feldWert(eintrag.gramm);
     eingabe.setAttribute("aria-label", t("grammVon", { name: name }));
     feld.appendChild(eingabe);
@@ -705,7 +711,7 @@ function zeichnePlan() {
     box.dataset.mahlzeit = "tag";
 
     const kopf = el("div", "mahlzeit-kopf");
-    kopf.appendChild(el("h3", "", t("heuteGegessen")));
+    kopf.appendChild(el("h3", "", aktuellesDatum === heuteAlsText() ? t("heuteGegessen") : t("gegessenAm", { datum: datumBeschriftung(aktuellesDatum) })));
     if (eintraegeVon(aktuellesDatum).length) kopf.appendChild(loeschKnopfKlein(t("alleLoeschen"), function () {
         delete daten.plan[aktuellesDatum];
         speichern(); zeichneZusammenfassung(); zeichnePlan();
@@ -745,7 +751,7 @@ function zeichnePlan() {
     if (typeof zeichneVorschlaege === "function") zeichneVorschlaege();
 }
 
-// Diktieren (🎤) steckt jetzt in js/sprache-eingabe.js – für alle Suchfelder.
+// Diktieren: ab v4.9 kein eigener 🎤-Knopf mehr – das 🎤 der Handy-Tastatur funktioniert überall.
 
 // ---------- Zuletzt ----------
 // Wann wurde ein Lebensmittel zuletzt benutzt? (angelegt, übernommen, gegessen) – 0 = nie
@@ -796,18 +802,9 @@ function schnellZeile(lm, beimEintragen) {
         zeile.classList.add("eben-dazu");
         setTimeout(function () { zeile.classList.remove("eben-dazu"); }, 900);
     }
-    // Antippen → "Wie viel?" darunter; ＋ → sofort mit der gewohnten Menge
-    knopf.addEventListener("click", function () {
-        const offen = zeile.nextSibling && zeile.nextSibling.classList && zeile.nextSibling.classList.contains("menge-frage");
-        document.querySelectorAll(".menge-frage").forEach(function (x) { x.remove(); });
-        if (offen) return;
-        const frage = mengeFrage(lm, null, function (gramm, einheit) {
-            frage.remove();
-            beimEintragen(lm, gramm, einheit);
-            blitz();
-        });
-        zeile.after(frage);
-    });
+    // Antippen oder ＋ → Mengen-Fenster (Lebensmittel sehen, Menge wählen, dann eintragen)
+    const oeffnen = function () { mengeFenster(lm, null, function (x, gramm, einheit) { beimEintragen(x, gramm, einheit); blitz(); }); };
+    knopf.addEventListener("click", oeffnen);
     const stern = el("button", "stern-knopf" + (lm.favorit ? " an" : ""), lm.favorit ? "★" : "☆");
     stern.type = "button";
     stern.setAttribute("aria-pressed", lm.favorit ? "true" : "false");
@@ -824,7 +821,7 @@ function schnellZeile(lm, beimEintragen) {
     const plus = el("button", "knopf-icon klein schnell-plus", "＋");
     plus.type = "button";
     plus.setAttribute("aria-label", t("schnellDazu", { name: anzeigeName(lm) }));
-    plus.addEventListener("click", function () { beimEintragen(lm); blitz(); });
+    plus.addEventListener("click", oeffnen);
     zeile.appendChild(knopf);
     zeile.appendChild(stern);
     zeile.appendChild(plus);
@@ -961,19 +958,12 @@ function trefferZeile(lm, vorgabe, beimEintragen) {
     info.appendChild(name);
     info.appendChild(el("div", "lm-werte", werteText(lm)));
     knopf.appendChild(info);
-    knopf.addEventListener("click", function () {
-        const offen = wrap.querySelector(".menge-frage");
-        document.querySelectorAll(".menge-frage").forEach(function (x) { x.remove(); });
-        if (offen) return;
-        wrap.appendChild(mengeFrage(lm, vorgabe, function (gramm, einheit) { beimEintragen(lm, gramm, einheit); }));
-    });
+    const oeffnen = function () { mengeFenster(lm, vorgabe, beimEintragen); };
+    knopf.addEventListener("click", oeffnen);
     const plus = el("button", "schnell-plus-direkt", "＋");
     plus.type = "button";
     plus.setAttribute("aria-label", t("schnellDazu", { name: anzeigeName(lm) }));
-    plus.addEventListener("click", function () {
-        if (vorgabe && vorgabe.menge) beimEintragen(lm, mengeInGramm(lm, vorgabe.menge, vorgabe.stueck), vorgabe.stueck ? "stueck" : "g");
-        else beimEintragen(lm);
-    });
+    plus.addEventListener("click", oeffnen);
     zeile.appendChild(knopf);
     zeile.appendChild(plus);
     wrap.appendChild(zeile);
@@ -1015,14 +1005,111 @@ function zeichneTagTreffer() {
     }
 }
 
+// =====================================================
+// Mengen-Fenster: Lebensmittel sehen, Menge mit − / ＋ (1 g bzw. ½ Stück) oder Tippen wählen,
+// kcal & Protein live sehen – erst dann eintragen.
+// Wohnhaus-Bild: die Waage in der Küche – erst abwiegen, dann in den Topf.
+// =====================================================
+let mengeAktuell = null; // { lm, wert, stueck, fertig }
+function mengeFenster(lm, vorgabe, beimFertig) {
+    // Stück-Lebensmittel (Ei, Banane …) starten mit 1 Stück, solange noch nie in Gramm eingetragen
+    let stueck = vorgabe && vorgabe.menge ? (vorgabe.stueck && !!lm.stueck) : (!!lm.stueck && (lm.letzteEinheit === "stueck" || !lm.letzteEinheit));
+    let wert;
+    if (vorgabe && vorgabe.menge) wert = vorgabe.menge;
+    else if (stueck && !lm.letzteEinheit) wert = 1;
+    else {
+        const g = lm.letzteGramm || 100;
+        wert = stueck ? Math.max(0.5, Math.round(g / lm.stueck.g * 2) / 2) : g;
+    }
+    mengeAktuell = { lm: lm, wert: wert, stueck: stueck, fertig: beimFertig };
+    const kopf = $("mengeLm");
+    kopf.innerHTML = "";
+    kopf.appendChild(bildElement(lm, "klein"));
+    const info = el("div", "lm-info");
+    info.appendChild(el("div", "lm-name", anzeigeName(lm)));
+    info.appendChild(el("div", "lm-werte", werteText(lm)));
+    kopf.appendChild(info);
+    $("mengeWert").value = "";
+    $("mengeEintragen").disabled = false;
+    mengeZeichnen();
+    oeffneFenster("dialogMenge");
+}
+function mengeGramm() {
+    const m = mengeAktuell;
+    return m.stueck && m.lm.stueck ? m.wert * m.lm.stueck.g : m.wert;
+}
+function mengeZeichnen() {
+    const m = mengeAktuell;
+    if (document.activeElement !== $("mengeWert") || !$("mengeWert").value) $("mengeWert").value = feldWert(m.wert);
+    const wahl = $("mengeEinheit");
+    wahl.innerHTML = "";
+    wahl.hidden = !m.lm.stueck;
+    if (m.lm.stueck) {
+        [[false, "g"], [true, einheitText(m.lm.stueck)]].forEach(function (p) {
+            const k = el("button", "einheit-option" + (m.stueck === p[0] ? " aktiv" : ""), p[1]);
+            k.type = "button";
+            k.addEventListener("click", function () {
+                if (m.stueck === p[0]) return;
+                const g = mengeGramm();
+                m.stueck = p[0];
+                m.wert = m.stueck ? Math.max(0.5, Math.round(g / m.lm.stueck.g * 2) / 2) : Math.round(g);
+                $("mengeWert").value = feldWert(m.wert);
+                mengeZeichnen();
+            });
+            wahl.appendChild(k);
+        });
+    }
+    const schnell = $("mengeSchnell");
+    schnell.innerHTML = "";
+    (m.stueck ? [0.5, 1, 1.5, 2, 3] : [50, 100, 150, 200, 250]).forEach(function (w) {
+        const k = el("button", "menge-chip" + (w === m.wert ? " aktiv" : ""), feldWert(w) + (m.stueck ? "" : " g"));
+        k.type = "button";
+        k.addEventListener("click", function () { m.wert = w; $("mengeWert").value = feldWert(w); mengeZeichnen(); });
+        schnell.appendChild(k);
+    });
+    const w = werteFuer(m.lm, mengeGramm());
+    const vorschau = $("mengeVorschau");
+    vorschau.innerHTML = "";
+    vorschau.appendChild(el("strong", "", "🔥 " + format(w.kcal) + " kcal"));
+    vorschau.appendChild(el("span", "", "💪 " + format(w.protein, 1) + " g · 🍞 " + format(w.kh, 1) + " g · 🧈 " + format(w.fett, 1) + " g"));
+    if (m.stueck) vorschau.appendChild(el("small", "", t("ungefaehrGramm", { g: format(mengeGramm()) })));
+}
+function mengeSchritt(richtung) {
+    const m = mengeAktuell;
+    $("mengeEintragen").disabled = false;
+    const schritt = m.stueck ? 0.5 : 1;
+    m.wert = Math.max(schritt, Math.round((m.wert + richtung * schritt) * 2) / 2);
+    $("mengeWert").value = feldWert(m.wert);
+    mengeZeichnen();
+}
+function mengeVerbinden() {
+    $("mengeMinus").addEventListener("click", function () { mengeSchritt(-1); });
+    $("mengePlus").addEventListener("click", function () { mengeSchritt(1); });
+    $("mengeWert").addEventListener("input", function () {
+        const z = zahl($("mengeWert").value);
+        const gueltig = z > 0 && z <= 5000;
+        $("mengeEintragen").disabled = !gueltig;
+        if (gueltig) { mengeAktuell.wert = z; mengeZeichnen(); }
+        else { $("mengeVorschau").innerHTML = ""; $("mengeVorschau").appendChild(el("span", "", "–")); }
+    });
+    $("mengeWert").addEventListener("keydown", function (e) { if (e.key === "Enter") $("mengeEintragen").click(); });
+    $("mengeEintragen").addEventListener("click", function () {
+        const m = mengeAktuell;
+        const imFeld = zahl($("mengeWert").value);
+        if (!m || !(imFeld > 0) || imFeld > 5000) { $("mengeEintragen").disabled = true; return; }
+        m.wert = imFeld;
+        schliesseFenster("dialogMenge");
+        m.fertig(m.lm, mengeGramm(), m.stueck ? "stueck" : "g");
+    });
+}
+
 // Gewählt → eintragen, Suche leeren
 function tagSucheFertig(lm, gramm, einheit) {
     const feld = $("tagSuche");
     feld.value = "";
     eintragHinzufuegen(lm.id, null, gramm, einheit);
-    // Gleich weitermachen: Suchfeld bleibt aktiv (Tastatur bleibt offen) für das nächste Lebensmittel
-    feld.focus();
     zeichneTagTreffer();
+    zeichneSchnellwahl();
 }
 
 
@@ -1060,7 +1147,7 @@ function mengeAendern(eintragId, neueGramm) {
     const eintrag = findeEintrag(eintragId);
     if (!eintrag) return;
     const lmStueck = findeLebensmittel(eintrag.lebensmittelId);
-    const minimum = lmStueck && lmStueck.stueck && eintrag.einheit === "stueck" ? lmStueck.stueck.g / 2 : 10;
+    const minimum = lmStueck && lmStueck.stueck && eintrag.einheit === "stueck" ? lmStueck.stueck.g / 2 : 1;
     if (!(neueGramm > 0) || neueGramm < minimum) neueGramm = eintrag.gramm > minimum ? eintrag.gramm : minimum; // nie 0 oder negativ
     neueGramm = Math.min(Math.round(neueGramm * 10) / 10, 5000);
 
@@ -1363,7 +1450,7 @@ function fotoVerkleinern(datei) {
 
 function formularMengeAendern(schritt) {
     const aktuell = zahl($("eingabeMenge").value);
-    const neu = Math.max(10, (aktuell > 0 ? aktuell : 100) + schritt);
+    const neu = Math.max(1, (aktuell > 0 ? aktuell : 100) + schritt);
     $("eingabeMenge").value = feldWert(neu);
 }
 
@@ -1582,12 +1669,12 @@ function zeichneRezept() {
         zeile.appendChild(entfernen);
 
         function setzeGramm(neu) {
-            if (!(neu > 0)) neu = zutat.gramm > 10 ? zutat.gramm : 10;
+            if (!(neu > 0)) neu = zutat.gramm > 1 ? zutat.gramm : 1;
             zutat.gramm = Math.min(Math.round(neu * 10) / 10, 10000);
             zeichneRezept();
         }
-        minus.addEventListener("click", function () { setzeGramm(zutat.gramm - 10); });
-        plus.addEventListener("click", function () { setzeGramm(zutat.gramm + 10); });
+        minus.addEventListener("click", function () { setzeGramm(zutat.gramm - 1); });
+        plus.addEventListener("click", function () { setzeGramm(zutat.gramm + 1); });
         eingabe.addEventListener("change", function () { setzeGramm(zahl(eingabe.value)); });
         eingabe.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); eingabe.blur(); } });
         entfernen.addEventListener("click", function () {
@@ -1955,13 +2042,17 @@ function oeffneEinstellungen() {
 }
 
 function zieleSpeichern() {
+    let ungueltig = false;
     ["zielKcal", "zielProtein", "zielKh", "zielFett"].forEach(function (schluessel) {
         const wert = zahl($(schluessel).value);
-        if (wert > 0) daten.einstellungen[schluessel] = Math.round(wert);
+        if (wert >= (schluessel === "zielKcal" ? 500 : 10) && wert <= 20000) daten.einstellungen[schluessel] = Math.round(wert);
+        else ungueltig = true;
     });
+    if (ungueltig) { zeigeMeldung(t("zieleUngueltig"), true); return; }
     speichern();
     schliesseFenster("dialogEinstellungen");
     zeichneZusammenfassung();
+    zeichneProfil(); // Profil-Zeile "2.200 kcal · 160 g Protein" gleich mit anpassen
     zeigeMeldung(t("zieleOk"));
 }
 
@@ -2121,26 +2212,18 @@ function verbinden() {
         zeichneSchnellwahl();
     });
     $("tagSuche").addEventListener("keydown", function (e) {
-        // Enter = ersten Treffer eintragen
-        if (e.key === "Enter") {
-            e.preventDefault();
-            const vorgabe = mengeAusText($("tagSuche").value);
-            const erster = gefilterteLebensmittel(vorgabe.such, "alle")[0];
-            if (erster && vorgabe.such.trim()) {
-                if (vorgabe.menge) tagSucheFertig(erster, mengeInGramm(erster, vorgabe.menge, vorgabe.stueck), vorgabe.stueck ? "stueck" : "g");
-                else tagSucheFertig(erster);
-            }
-        }
+        // Lupe/Enter auf der Tastatur = nur Tastatur einklappen – die Treffer bleiben stehen
+        if (e.key === "Enter") { e.preventDefault(); $("tagSuche").blur(); }
         if (e.key === "Escape") { $("tagSuche").value = ""; zeichneTagTreffer(); zeichneSchnellwahl(); }
     });
     $("tagScan").addEventListener("click", function (e) {
         e.preventDefault();
-        oeffneScanner(function (lm) { allesZeichnen(); eintragHinzufuegen(lm.id); });
+        oeffneScanner(function (lm) { allesZeichnen(); mengeFenster(lm, null, function (x, g, e) { eintragHinzufuegen(x.id, null, g, e); }); });
     });
     $("knopfSport").addEventListener("click", function () { oeffneSport(); });
     wischLeistenEinrichten(); // Filter-Leisten: weiche Kante + gewählter Knopf ins Bild
+    mengeVerbinden(); // Mengen-Fenster
     appAnleitungVerbinden(); // 📲 "Als App speichern"
-    spracheKnoepfeEinbauen(); // 🎤 in allen Suchfeldern (js/sprache-eingabe.js)
     sportVerbinden();
     kontoVerbinden();
 
@@ -2182,8 +2265,8 @@ function verbinden() {
         formularSpeichern();
     });
     $("formular").addEventListener("input", function () { $("formularFehler").textContent = ""; });
-    $("formMinus").addEventListener("click", function () { formularMengeAendern(-10); });
-    $("formPlus").addEventListener("click", function () { formularMengeAendern(10); });
+    $("formMinus").addEventListener("click", function () { formularMengeAendern(-1); });
+    $("formPlus").addEventListener("click", function () { formularMengeAendern(1); });
     $("fotoEntfernen").addEventListener("click", function () { setzeFormularFoto(null); });
     $("fotoInput").addEventListener("change", function () {
         const datei = $("fotoInput").files[0];
@@ -2216,6 +2299,17 @@ function verbinden() {
         ereignis.preventDefault();
         zieleSpeichern();
     });
+    // Ziele werden schon beim Tippen übernommen – auch wenn man das Fenster mit ✕ schließt
+    ["zielKcal", "zielProtein", "zielKh", "zielFett"].forEach(function (schluessel) {
+        $(schluessel).addEventListener("input", function () {
+            const wert = zahl($(schluessel).value);
+            if (!(wert >= (schluessel === "zielKcal" ? 500 : 10)) || wert > 20000) return; // halbe Eingaben ("1") nicht übernehmen
+            daten.einstellungen[schluessel] = Math.round(wert);
+            speichern();
+            zeichneZusammenfassung();
+            zeichneProfil();
+        });
+    });
     $("knopfExport").addEventListener("click", sicherungHerunterladen);
     $("knopfImport").addEventListener("click", function () { $("importInput").click(); });
     $("importInput").addEventListener("change", function () {
@@ -2247,6 +2341,15 @@ gemeinsamAktualisieren(); // neue Lebensmittel/Rezepte "für alle" holen
 
 // iPhone: Höhe des wirklich sichtbaren Bereichs merken (Tastatur offen → kleiner),
 // damit Fenster nicht oben aus dem Bild rutschen
+let groessteHoehe = 0; // größte gemessene sichtbare Höhe = Tastatur zu
+let tastaturPruefUhr = null;
+function tastaturHoehePruefen() {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    groessteHoehe = Math.max(groessteHoehe, vv.height);
+    if (vv.height > groessteHoehe * 0.85) document.body.classList.remove("tastatur");
+    else if (tastaturOffen()) document.body.classList.add("tastatur");
+}
 (function () {
     const vv = window.visualViewport;
     if (!vv) return;
@@ -2256,17 +2359,84 @@ gemeinsamAktualisieren(); // neue Lebensmittel/Rezepte "für alle" holen
         wurzel.setProperty("--vv-oben", Math.round(vv.offsetTop) + "px"); // so weit ist die Seite nach oben geschoben
         // Wie viel verdeckt die Tastatur unten? Fenster werden genau darüber gesetzt
         const verdeckt = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop));
+        // Tastatur zu, obwohl das Feld noch aktiv ist (z. B. Android-Zurück)? → Leiste wieder zeigen
+        tastaturHoehePruefen();
+        clearTimeout(tastaturPruefUhr);
+        tastaturPruefUhr = setTimeout(tastaturHoehePruefen, 300); // nochmal, wenn die Größe sich gesetzt hat
         wurzel.setProperty("--tastatur", verdeckt + "px");
     };
     vv.addEventListener("resize", setzen);
     vv.addEventListener("scroll", setzen);
+    window.addEventListener("resize", setzen);
     setzen();
 })();
+
+// =====================================================
+// Tastatur-Regeln – gelten überall (Wohnhaus-Bild: die Hausordnung, nicht jede Wohnung einzeln)
+// 1. Tastatur offen → Leiste unten ausblenden (sie würde sonst über der Tastatur schweben)
+// 2. Lupe/Enter → Tastatur zu (Treffer bleiben)
+// 3. In einer Liste wischen oder daneben tippen → Tastatur zu
+// 4. Suchfeld angetippt → Seite so schieben, dass das Feld oben steht und die Treffer darunter sichtbar sind
+// 5. Fenster passen sich dem sichtbaren Bereich an (siehe CSS v4.6) – Speichern-Knöpfe kleben unten
+// =====================================================
+function tastaturOffen() {
+    const f = document.activeElement;
+    return !!f && /INPUT|TEXTAREA|SELECT/.test(f.tagName) && !/checkbox|radio|file|button/.test(f.type || "");
+}
+document.addEventListener("focusin", function () {
+    if (tastaturOffen()) document.body.classList.add("tastatur");
+    else setTimeout(function () { document.body.classList.toggle("tastatur", tastaturOffen()); }, 400); // erst später entfernen (Tipp darf nicht verrutschen)
+});
+document.addEventListener("focusout", function () { setTimeout(function () { document.body.classList.toggle("tastatur", tastaturOffen()); }, 400); }); // etwas später, damit ein Tipp nicht verrutscht
+// Enter in einem einzeiligen Feld (außer Formularen mit eigenem Absenden) → Tastatur zu
+document.addEventListener("keydown", function (e) {
+    const f = e.target;
+    if (e.key !== "Enter" || !f || f.tagName !== "INPUT") return;
+    if (f.type === "search" || f.inputMode === "decimal" || f.inputMode === "numeric") setTimeout(function () { f.blur(); }, 0);
+});
+// Wischen in Listen/Seite oder Tippen außerhalb eines Feldes → Tastatur zu
+let tastaturWischStart = null;
+document.addEventListener("touchstart", function (e) { tastaturWischStart = e.touches[0] ? e.touches[0].clientY : null; }, { passive: true });
+document.addEventListener("touchmove", function (e) {
+    if (!tastaturOffen() || tastaturWischStart === null || !e.touches[0]) return;
+    if (Math.abs(e.touches[0].clientY - tastaturWischStart) > 24 && !e.target.closest("input, textarea")) document.activeElement.blur();
+}, { passive: true });
+document.addEventListener("touchend", function (e) {
+    if (!tastaturOffen()) return;
+    const ziel = e.target;
+    if (ziel.closest("input, textarea, select, label.suche, .menge-eingabe, .satz-zeile, button, a")) return;
+    document.activeElement.blur();
+});
+// Knopf angetippt → erst den Knopf wirken lassen, DANN Tastatur zu (sonst verrutscht die Seite unter dem Finger)
+document.addEventListener("click", function (e) {
+    if (!tastaturOffen()) return;
+    const knopf = e.target.closest("button, a");
+    if (!knopf || knopf.closest("label.suche, .menge-eingabe, .satz-zeile")) return;
+    setTimeout(function () { if (tastaturOffen() && !document.activeElement.closest("dialog[open]")) document.activeElement.blur(); }, 0);
+});
+// Suchfelder auf der Seite: beim Antippen nach oben holen, damit die Treffer über der Tastatur Platz haben
+document.addEventListener("focusin", function (e) {
+    const f = e.target;
+    if (!f || f.type !== "search" || f.closest("dialog") || window.innerWidth >= 900) return;
+    const nachOben = function () {
+        if (document.activeElement !== f) return;
+        const r = f.getBoundingClientRect();
+        if (Math.abs(r.top - 12) > 4) window.scrollTo(0, Math.max(0, window.scrollY + r.top - 12)); // sofort, ohne Animation (nichts rutscht unter dem Finger weg)
+    };
+    document.body.classList.add("tastatur"); // Platz unten sofort schaffen
+    nachOben();
+    setTimeout(nachOben, 350); // nochmal, wenn die Tastatur ganz offen ist
+});
+// Fenster zu → "nach dem Speichern"-Auftrag verwerfen (sonst landet später etwas ungefragt im Tag)
+document.querySelectorAll("dialog").forEach(function (d) {
+    if (d.id === "dialogFormular") d.addEventListener("close", function () { setTimeout(function () { nachFormularSpeichern = null; }, 0); });
+});
 
 // Tastatur geht auf → das angetippte Feld in die Mitte des sichtbaren Bereichs holen (Fenster UND Seite)
 document.addEventListener("focusin", function (e) {
     const feld = e.target;
     if (!feld || !/INPUT|TEXTAREA|SELECT/.test(feld.tagName) || feld.type === "checkbox" || feld.type === "file") return;
+    if (feld.type === "search" && !feld.closest("dialog")) return; // Suchfelder auf der Seite: werden nach OBEN geholt (siehe unten)
     setTimeout(function () {
         if (document.activeElement !== feld) return;
         const r = feld.getBoundingClientRect();

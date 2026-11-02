@@ -65,7 +65,6 @@
                 <label class="suche tag-suche">
                     <span aria-hidden="true">🔍</span>
                     <input id="tagSuche" type="search" data-t-ph="tagSuchePh" placeholder="Add food …" autocomplete="off" enterkeyhint="search">
-                    <button type="button" class="suche-mikro" id="tagMikro" data-t-aria="diktieren" data-t-title="diktieren" aria-label="Dictate" title="Dictate" hidden>🎤</button>
                     <button type="button" class="suche-scan" id="tagScan" data-t-aria="scanOeffnen" data-t-title="scanOeffnen" aria-label="Scan barcode" title="Scan barcode">
                         <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M7 8v8M10 8v8M13 8v8M16.5 8v8" stroke="currentColor" stroke-width="1.6"/></svg>
                     </button>
@@ -97,6 +96,7 @@
 
             <h3 class="block-titel" id="listeTitel" hidden></h3>
             <div id="lebensmittelListe" class="liste"></div>
+            <span id="essenTagAnker" hidden></span>
             <button type="button" class="knopf-link" id="knopfAlleLm" data-t="alleLm">Manage all foods ›</button>
         </section>
 
@@ -148,6 +148,7 @@
 
 
             <div id="trainerVorschlaege" class="vorschlaege" hidden></div>
+            <span id="mahlzeitenAnker" hidden></span>
             <div id="mahlzeiten" class="mahlzeiten"></div>
             <div id="sportTag" class="sport-tag"></div>
             <button type="button" class="profil-zeile rezeptbuch-zeile" id="knopfRezeptbuch">
@@ -325,11 +326,11 @@
                 <span class="neu-icon" aria-hidden="true">📷</span>
                 <span><b data-t="neuScan">Scan barcode</b><small data-t="neuScanText">Point the camera at the package</small></span>
             </button>
-            <button type="button" class="neu-karte" id="neuUebung">
+            <button type="button" class="neu-karte" id="neuUebung" hidden>
                 <span class="neu-icon" aria-hidden="true">🏋️</span>
                 <span><b data-t="neuUebung">Exercise</b><small data-t="neuUebungText">A single exercise – from suggestions or your own</small></span>
             </button>
-            <button type="button" class="neu-karte" id="neuSession">
+            <button type="button" class="neu-karte" id="neuSession" hidden>
                 <span class="neu-icon" aria-hidden="true">📦</span>
                 <span><b data-t="neuSession">Whole session</b><small data-t="neuSessionText">HYROX, triathlon, gym, home – or one of yours</small></span>
             </button>
@@ -428,6 +429,24 @@
         </div>
         <div id="kontoInhalt" class="konto-inhalt"></div>
         <p id="kontoFehler" class="fehler" role="alert"></p>
+    </dialog>
+
+    <!-- ===== Fenster: Menge wählen, bevor eingetragen wird ===== -->
+    <dialog id="dialogMenge" class="fenster">
+        <div class="fenster-kopf">
+            <h2 data-t="mengeTitel">How much?</h2>
+            <button type="button" class="knopf-icon" data-schliessen data-t-aria="schliessen" aria-label="Close">✕</button>
+        </div>
+        <div class="menge-lm" id="mengeLm"></div>
+        <div class="menge-eingabe">
+            <button type="button" class="menge-knopf" id="mengeMinus" data-t-aria="weniger" aria-label="Less">−</button>
+            <input id="mengeWert" type="text" inputmode="decimal" enterkeyhint="done" autocomplete="off" aria-label="Amount">
+            <button type="button" class="menge-knopf" id="mengePlus" data-t-aria="mehr" aria-label="More">＋</button>
+        </div>
+        <div class="einheit-wahl menge-einheit" id="mengeEinheit" role="group"></div>
+        <div class="menge-schnell" id="mengeSchnell"></div>
+        <div class="menge-vorschau" id="mengeVorschau"></div>
+        <button type="button" class="knopf-primaer breit" id="mengeEintragen" data-t="mengeEintragen">✓ Add</button>
     </dialog>
 
     <!-- ===== Fenster: Daten löschen (immer mit zweitem Tipp) ===== -->
@@ -715,7 +734,6 @@
     <script src="js/wolke-konfig.js"></script>
     <script src="js/wolke.js"></script>
     <script src="js/konto.js"></script>
-    <script src="js/sprache-eingabe.js"></script>
     <script src="js/app.js"></script>
 </body>
 
