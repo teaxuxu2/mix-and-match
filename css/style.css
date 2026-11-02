@@ -2244,3 +2244,18 @@ body:not([data-tab="plan"]) .creators { display: none; }
 .tag-treffer { max-height: none; overflow: visible; }
 #trainingAuswahl, #tagTreffer, #auswahlListe.liste.kompakt { max-height: none; overflow: visible; } /* keine Scroll-Fallen im Kästchen – die Seite scrollt */
 .sport-karte .eintrag-entfernen { flex: none; color: #0b3b26; }
+
+/* ===== Version 5.2: Speichern oben in der Kopfzeile (wie iPhone-Apps), unten nichts mehr festgeklebt ===== */
+.fenster-kopf { gap: 8px; }
+.fenster-kopf h2 { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kopf-speichern {
+    flex: none; min-height: 44px; padding: 0 14px; border-radius: 14px; border: none;
+    background: var(--akzent); color: var(--akzent-text); font-size: 15px; font-weight: 700; cursor: pointer; white-space: nowrap;
+}
+.kopf-speichern:disabled { opacity: 0.45; }
+@media (max-width: 899px) {
+    .fenster[open] .fenster-aktionen,
+    .fenster[open] #uebungSpeichern,
+    .fenster[open] #mengeEintragen,
+    .fenster[open] form > .knopf-primaer.breit { position: static; box-shadow: none; }
+}

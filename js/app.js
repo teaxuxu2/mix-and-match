@@ -312,7 +312,7 @@ function appAnleitungVerbinden() {
 }
 
 // Sichtbare Versionsnummer (Profil ganz unten) – so sieht man, ob die neue Version da ist
-const APP_VERSION = "5.1"; // muss gleich sein wie in js/version.json
+const APP_VERSION = "5.2"; // muss gleich sein wie in js/version.json
 
 function zeichneProfil() {
     $("appVersion").textContent = t("appVersion", { nr: APP_VERSION });
@@ -2223,6 +2223,7 @@ function verbinden() {
     $("knopfSport").addEventListener("click", function () { oeffneSport(); });
     wischLeistenEinrichten(); // Filter-Leisten: weiche Kante + gewählter Knopf ins Bild
     mengeVerbinden(); // Mengen-Fenster
+    kopfSpeichernEinbauen(); // ✓ Speichern oben in den Fenstern
     appAnleitungVerbinden(); // 📲 "Als App speichern"
     sportVerbinden();
     kontoVerbinden();
@@ -2341,6 +2342,7 @@ gemeinsamAktualisieren(); // neue Lebensmittel/Rezepte "für alle" holen
 
 // iPhone: Höhe des wirklich sichtbaren Bereichs merken (Tastatur offen → kleiner),
 // damit Fenster nicht oben aus dem Bild rutschen
+let vvMessen = function () {}; // misst den sichtbaren Bereich (wird unten gesetzt)
 let groessteHoehe = 0; // größte gemessene sichtbare Höhe = Tastatur zu
 let tastaturPruefUhr = null;
 function tastaturHoehePruefen() {
@@ -2353,7 +2355,7 @@ function tastaturHoehePruefen() {
 (function () {
     const vv = window.visualViewport;
     if (!vv) return;
-    const setzen = function () {
+    const setzen = vvMessen = function () {
         const wurzel = document.documentElement.style;
         wurzel.setProperty("--sichtbar", Math.round(vv.height) + "px");
         wurzel.setProperty("--vv-oben", Math.round(vv.offsetTop) + "px"); // so weit ist die Seite nach oben geschoben
@@ -2427,6 +2429,34 @@ document.addEventListener("focusin", function (e) {
     nachOben();
     setTimeout(nachOben, 350); // nochmal, wenn die Tastatur ganz offen ist
 });
+// iPhone meldet die Tastatur-Höhe manchmal erst spät → nach jedem Fokuswechsel mehrfach nachmessen
+["focusin", "focusout"].forEach(function (art) {
+    document.addEventListener(art, function () { [80, 300, 650, 1000].forEach(function (ms) { setTimeout(function () { vvMessen(); }, ms); }); });
+});
+
+// Speichern/Eintragen zusätzlich OBEN in der Kopfzeile (neben ✕) – dort verdeckt die Tastatur nie etwas
+function kopfSpeichernEinbauen() {
+    [["dialogUebung", "#uebungSpeichern"], ["dialogFormular", "#formularSpeichern"], ["dialogRezept", "#formRezept button[type=submit]"],
+     ["dialogEinstellungen", "#formEinstellungen button[type=submit]"], ["dialogMenge", "#mengeEintragen"]].forEach(function (p) {
+        const fenster = $(p[0]);
+        const original = fenster && fenster.querySelector(p[1]);
+        const kopf = fenster && fenster.querySelector(".fenster-kopf");
+        if (!original || !kopf || kopf.querySelector(".kopf-speichern")) return;
+        const knopf = el("button", "kopf-speichern", "✓ " + t(p[0] === "dialogMenge" ? "eintragenKurz" : "speichern"));
+        knopf.type = "button";
+        knopf.dataset.kopfFuer = p[1];
+        knopf.addEventListener("click", function () {
+            if (original.disabled) return;
+            if (original.type === "submit" && original.form) original.form.requestSubmit(original);
+            else original.click();
+        });
+        // gesperrt, wenn das Original gesperrt ist (z. B. ungültige Menge)
+        new MutationObserver(function () { knopf.disabled = original.disabled; }).observe(original, { attributes: true, attributeFilter: ["disabled"] });
+        const zu = kopf.querySelector("[data-schliessen]");
+        kopf.insertBefore(knopf, zu || null);
+    });
+}
+
 // Fenster zu → "nach dem Speichern"-Auftrag verwerfen (sonst landet später etwas ungefragt im Tag)
 document.querySelectorAll("dialog").forEach(function (d) {
     if (d.id === "dialogFormular") d.addEventListener("close", function () { setTimeout(function () { nachFormularSpeichern = null; }, 0); });
