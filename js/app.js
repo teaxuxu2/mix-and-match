@@ -391,7 +391,7 @@ function appAnleitungVerbinden() {
 }
 
 // Sichtbare Versionsnummer (Profil ganz unten) – so sieht man, ob die neue Version da ist
-const APP_VERSION = "5.3"; // muss gleich sein wie in js/version.json
+const APP_VERSION = "5.4"; // muss gleich sein wie in js/version.json
 
 function zeichneProfil() {
     $("appVersion").textContent = t("appVersion", { nr: APP_VERSION });
@@ -1182,6 +1182,11 @@ function mengeVerbinden() {
     });
 }
 
+// Rezepte & Aktionen-Fenster: erst Menge wählen (wie bei allen anderen Lebensmitteln), dann eintragen
+function mengeWaehlenUndEintragen(lm) {
+    mengeFenster(lm, null, function (x, gramm, einheit) { eintragHinzufuegen(x.id, null, gramm, einheit); });
+}
+
 // Gewählt → eintragen, Suche leeren
 function tagSucheFertig(lm, gramm, einheit) {
     const feld = $("tagSuche");
@@ -1399,8 +1404,8 @@ function oeffneAktionen(id) {
     const knopf = el("button", "knopf-primaer", t("zuMeinemTag"));
     knopf.type = "button";
     knopf.addEventListener("click", function () {
-        eintragHinzufuegen(id);
         schliesseFenster("dialogAktionen");
+        mengeWaehlenUndEintragen(lm);
     });
     knoepfe.appendChild(knopf);
 
@@ -1868,8 +1873,8 @@ function oeffneAnsicht(id) {
     const knopf = el("button", "knopf-primaer", t("zuMeinemTag"));
     knopf.type = "button";
     knopf.addEventListener("click", function () {
-        eintragHinzufuegen(id);
         schliesseFenster("dialogAnsicht");
+        mengeWaehlenUndEintragen(lm);
     });
     knoepfe.appendChild(knopf);
 
