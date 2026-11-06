@@ -22,9 +22,9 @@ const INFLUENCER = [
         titel: { de: "Gründerin von Mix & Match", en: "Founder of Mix & Match" },
         bio: { de: [], en: [] },
         codes: [],
-        stand: 2,                   // 2 = Carnivore-Brot dazugekommen
-        aktualisiert: "2026-10-26",
-        zustimmung: "Eigenes Profil (Ivy)"
+        stand: 3,                   // 2 = Carnivore-Brot dazugekommen, 3 = Carnivore-Brot korrigiert (06.11.2026)
+        aktualisiert: "2026-11-06",
+        zustimmung: "Eigenes Profil (Tea)"
     },
     {
         id: "fitfabi",
