@@ -390,7 +390,8 @@ function trainingZeile(zeige, beimEintragen, block, beimLoeschen) {
     knopf.type = "button";
     knopf.appendChild(el("span", "sport-icon", zeige.uebungen ? "📦" : uebungIcon(zeige)));
     const info = el("span", "sport-info");
-    info.appendChild(el("strong", "", zeige.name));
+    const hatVideo = zeige.uebungen ? zeige.uebungen.some(function (u) { return u.videoId || (u.bibId && bibHatVideo(u.bibId)); }) : (zeige.videoId || (zeige.bibId && bibHatVideo(zeige.bibId)));
+    info.appendChild(el("strong", "", zeige.name + (hatVideo ? " 🎬" : "")));
     info.appendChild(el("small", "", zeige.uebungen ? sportTagText(zeige.uebungen) : uebungKurztext(zeige)));
     knopf.appendChild(info);
     knopf.addEventListener("click", function () { beimEintragen(); });
@@ -478,6 +479,17 @@ function zeichneTraining() {
                 daten.sport.pakete = daten.sport.pakete.filter(function (x) { return x !== p; });
                 sportSpeichern(); zeichneTraining();
                 zeigeMeldung(t("geloescht", { name: p.name }));
+            }));
+        });
+        // 🔒 Basis-Pakete: immer da, können nicht gelöscht oder überschrieben werden
+        auswahl.appendChild(el("p", "block-titel basis-titel", t("basisPakete")));
+        SESSION_VORLAGEN.forEach(function (v) {
+            const name = (typeof daten !== "undefined" && daten.einstellungen.sprache === "en") ? v.en : v.de;
+            const zeige = { name: "🔒 " + name, uebungen: basisPaketUebungen(v) };
+            auswahl.appendChild(trainingZeile(zeige, function () {
+                uebungenUebernehmen(basisPaketUebungen(v), name);
+                zeigeMeldung(t("paketDazu", { name: name }));
+                zeichneTraining();
             }));
         });
     } else {
@@ -712,13 +724,28 @@ function sessionSpeichern() {
     const uebungen = sportVon(aktuellesDatum);
     if (!uebungen.length) return;
     const name = sessionNameVon(aktuellesDatum) || t("sessionStandardname", { datum: datumBeschriftung(aktuellesDatum) });
-    const vorhanden = daten.sport.pakete.find(function (p) { return p.name.toLowerCase() === name.toLowerCase(); });
-    const alteVideos = vorhanden ? vorhanden.uebungen.map(function (u) { return u.videoId; }) : [];
+    // Ein gespeichertes Paket wird NIE überschrieben: gleicher Name → neues Paket "Name (2)".
+    // So bleibt z. B. das volle HYROX-Paket erhalten, auch wenn man heute Übungen weggelassen hat.
+    const vergeben = function (n) { return daten.sport.pakete.some(function (p) { return p.name.toLowerCase() === n.toLowerCase(); }); };
+    let neuerName = name.slice(0, 40);
+    for (let i = 2; vergeben(neuerName); i++) neuerName = name.slice(0, 34) + " (" + i + ")";
     const ohneHaken = function (u) { const k = uebungKopie(u); k.erledigt = false; return k; };
-    if (vorhanden) vorhanden.uebungen = uebungen.map(ohneHaken);
-    else daten.sport.pakete.push({ id: neueId(), name: name.slice(0, 40), uebungen: uebungen.map(ohneHaken) });
-    if (sportSpeichern()) zeigeMeldung(t(vorhanden ? "sessionAktualisiert" : "sessionGespeichert", { name: name }));
-    alteVideos.forEach(videoAufraeumen);
+    daten.sport.pakete.push({ id: neueId(), name: neuerName, uebungen: uebungen.map(ohneHaken) });
+    if (neuerName !== name.slice(0, 40)) daten.sport.sessionNamen[aktuellesDatum] = neuerName;
+    if (sportSpeichern()) zeigeMeldung(neuerName !== name.slice(0, 40) ? t("paketKopie", { name: neuerName, alt: name }) : t("sessionGespeichert", { name: neuerName }));
+}
+
+// Basis-Pakete (fest eingebaut, z. B. HYROX) als eintragbare Liste – mit deinen eigenen Übungen,
+// wenn du eine gleichnamige hast (dann bleiben dein Video und deine letzten Werte dabei)
+function basisPaketUebungen(vorlage) {
+    return vorlage.uebungen.map(function (bibId) {
+        const b = UEBUNG_BIBLIOTHEK_NACH_ID[bibId];
+        if (!b) return null;
+        const namen = [b.de.toLowerCase(), b.en.toLowerCase()];
+        const eigene = daten.sport.bloecke.find(function (x) { return namen.indexOf(x.name.toLowerCase()) !== -1; });
+        if (eigene) { const k = uebungKopie(eigene); k.blockId = eigene.id; return k; }
+        return bibZuUebung(b);
+    }).filter(Boolean);
 }
 
 // Übungen in den aktuellen Tag kopieren (optional mit Session-Name)
