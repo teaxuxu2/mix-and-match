@@ -153,6 +153,7 @@ function leereDaten() {
         lebensmittel: STARTDATEN.map(startLebensmittel),
         plan: {},
         sport: leererSport(),
+        mahlzeiten: [], // gespeicherte Mahlzeiten (Gruppen von Lebensmitteln mit Mengen), ab v5.9
         einstellungen: { zielKcal: 2200, zielProtein: 160, zielKh: 250, zielFett: 80, sprache: browserSprache(),
             // 👁 Was man in "Heute" sieht (ab v4.0) – Standard: nur Kalorien, Essen und Training
             anzeige: { kcal: true, protein: false, fett: false, kh: false, essen: true, sport: true } },
@@ -255,6 +256,8 @@ function altesFormatUebernehmen(daten) {
 function migrieren(daten) {
     if (!Array.isArray(daten.lebensmittel)) daten.lebensmittel = [];
     if (!daten.plan || typeof daten.plan !== "object") daten.plan = {};
+    // Gespeicherte Mahlzeiten kamen in Version 5.9 dazu
+    if (!Array.isArray(daten.mahlzeiten)) daten.mahlzeiten = [];
     // Sport kam in Version 2.0 dazu: fehlt er, gibt es einen leeren Sport-Bereich
     if (!daten.sport || typeof daten.sport !== "object") daten.sport = leererSport();
     if (!daten.sport.tage || typeof daten.sport.tage !== "object") daten.sport.tage = {};
@@ -390,6 +393,7 @@ function zuKompakt(daten) {
         eigene: eigene,
         plan: daten.plan,
         sport: daten.sport,
+        mahlzeiten: daten.mahlzeiten || [],
         einstellungen: daten.einstellungen
     };
     if (daten.alteUebernommen) kompakt.alteUebernommen = daten.alteUebernommen;
@@ -425,6 +429,7 @@ function vonKompakt(kompakt) {
         lebensmittel: lebensmittel.concat(kompakt.eigene || []),
         plan: kompakt.plan || {},
         sport: kompakt.sport,
+        mahlzeiten: kompakt.mahlzeiten || [],
         einstellungen: kompakt.einstellungen || {},
         bekannteStartIds: bekannteStartIds,
         alteUebernommen: kompakt.alteUebernommen

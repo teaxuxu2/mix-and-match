@@ -74,6 +74,7 @@
                 <button type="button" class="essen-chip" id="iconFavoriten" aria-pressed="false"><span class="chip-emo" aria-hidden="true">⭐ </span><span data-t="filterFav">Favorites</span></button>
                 <button type="button" class="essen-chip" id="iconZuletzt" aria-pressed="false"><span class="chip-emo" aria-hidden="true">🕘 </span><span data-t="haeufig">Frequent</span></button>
                 <button type="button" class="essen-chip" id="iconRezepte" aria-pressed="false"><span class="chip-emo" aria-hidden="true">📖 </span><span data-t="filterRezepte">Recipes</span></button>
+                <button type="button" class="essen-chip" id="iconMahlzeiten" aria-pressed="false"><span class="chip-emo" aria-hidden="true">🍱 </span><span data-t="mahlzeitenChip">Meals</span></button>
                         </div>
             <button type="button" class="neu-zeile" id="knopfNeuKlein"><span class="neu-plus" aria-hidden="true">＋</span><span class="sport-info"><strong data-t="neuAnlegen">Create new</strong><small data-t="neuAnlegenText">Food or recipe</small></span><span class="knopf-icon klein" aria-hidden="true">›</span></button>
             <div id="tagTreffer" class="tag-treffer liste kompakt" hidden></div>
@@ -429,6 +430,20 @@
         </div>
         <div id="kontoInhalt" class="konto-inhalt"></div>
         <p id="kontoFehler" class="fehler" role="alert"></p>
+    </dialog>
+
+    <!-- ===== Fenster: Einträge als Mahlzeit speichern ===== -->
+    <dialog id="dialogMahlzeit" class="fenster">
+        <div class="fenster-kopf">
+            <h2 data-t="mahlzeitTitel">Save as meal</h2>
+            <button type="button" class="knopf-icon" data-schliessen data-t-aria="schliessen" aria-label="Close">✕</button>
+        </div>
+        <label class="feld-titel" for="mahlzeitName" data-t="mahlzeitName">Name of the meal</label>
+        <input id="mahlzeitName" class="eingabe-name" type="text" maxlength="40" autocomplete="off" data-t-ph="mahlzeitNamePh" placeholder="e.g. My breakfast">
+        <p class="leer klein" data-t="mahlzeitWaehlen">Which foods belong to it?</p>
+        <div id="mahlzeitAuswahl" class="anzeige-liste"></div>
+        <p class="fehler" id="mahlzeitFehler" hidden></p>
+        <button type="button" class="knopf-primaer breit" id="mahlzeitSpeichern" data-t="mahlzeitSpeichern">💾 Save meal</button>
     </dialog>
 
     <!-- ===== Fenster: Menge wählen, bevor eingetragen wird ===== -->

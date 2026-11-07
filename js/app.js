@@ -391,7 +391,7 @@ function appAnleitungVerbinden() {
 }
 
 // Sichtbare Versionsnummer (Profil ganz unten) – so sieht man, ob die neue Version da ist
-const APP_VERSION = "5.8"; // muss gleich sein wie in js/version.json
+const APP_VERSION = "5.9"; // muss gleich sein wie in js/version.json
 
 function zeichneProfil() {
     $("appVersion").textContent = t("appVersion", { nr: APP_VERSION });
@@ -806,6 +806,13 @@ function zeichnePlan() {
     });
     if (eintraege.length === 0) liste.appendChild(el("p", "leer klein", t("tagLeer")));
     box.appendChild(liste);
+    // Mehrere Einträge → als Mahlzeit merken (wie Pakete beim Training)
+    if (eintraege.length) {
+        const merken = el("button", "knopf-zweit breit mahlzeit-merken", t("mahlzeitAlsKnopf"));
+        merken.type = "button";
+        merken.addEventListener("click", oeffneMahlzeitSpeichern);
+        box.appendChild(merken);
+    }
 
     // Ablegen beim Ziehen (Computer)
     box.addEventListener("dragover", function (ereignis) {
@@ -928,9 +935,12 @@ function zeichneSchnellwahl() {
     $("iconFavoriten").setAttribute("aria-pressed", schnellAnsicht === "favoriten" ? "true" : "false");
     $("iconZuletzt").classList.toggle("aktiv", schnellAnsicht === "zuletzt");
     $("iconZuletzt").setAttribute("aria-pressed", schnellAnsicht === "zuletzt" ? "true" : "false");
+    $("iconMahlzeiten").classList.toggle("aktiv", schnellAnsicht === "mahlzeiten");
+    $("iconMahlzeiten").setAttribute("aria-pressed", schnellAnsicht === "mahlzeiten" ? "true" : "false");
     panel.innerHTML = "";
     if (!schnellAnsicht || $("tagSuche").value.trim()) { panel.hidden = true; return; }
     panel.hidden = false;
+    if (schnellAnsicht === "mahlzeiten") { zeichneMahlzeitenListe(panel); return; }
     const liste = schnellAnsicht === "favoriten"
         ? daten.lebensmittel.filter(function (lm) { return lm.favorit; })
             .sort(function (a, b) { return zuletztRang(b) - zuletztRang(a); })
@@ -950,6 +960,112 @@ function zeichneSchnellwahl() {
     liste.forEach(function (lm) {
         panel.appendChild(schnellZeile(lm, function (x, gramm, einheit) { eintragHinzufuegen(x.id, null, gramm, einheit); }));
     });
+}
+
+// =====================================================
+// Gespeicherte Mahlzeiten – wie Pakete beim Training:
+// Einträge des Tages als Gruppe merken; später mit einem Tipp alle Lebensmittel
+// einzeln (mit Menge) eintragen und danach wie gewohnt anpassen.
+// Wohnhaus-Bild: die Brotdose – einmal packen, jeden Tag wieder mitnehmen.
+// =====================================================
+function mahlzeitWerte(m) {
+    let kcal = 0;
+    m.eintraege.forEach(function (e) { const lm = findeLebensmittel(e.lebensmittelId); if (lm) kcal += werteFuer(lm, e.gramm).kcal; });
+    return kcal;
+}
+function zeichneMahlzeitenListe(panel) {
+    const kopf = el("div", "schnell-kopf");
+    kopf.appendChild(el("strong", "", "🍱 " + t("mahlzeitenChip")));
+    const zu = el("button", "knopf-icon klein", "✕");
+    zu.type = "button";
+    zu.setAttribute("aria-label", t("schliessen"));
+    zu.addEventListener("click", function () { schnellAnsicht = null; zeichneSchnellwahl(); });
+    kopf.appendChild(zu);
+    panel.appendChild(kopf);
+    if (!daten.mahlzeiten.length) { panel.appendChild(el("p", "leer klein", t("mahlzeitenLeer"))); return; }
+    daten.mahlzeiten.forEach(function (m) {
+        const zeile = el("div", "lm-karte schnell-zeile mahlzeit-zeile");
+        const knopf = el("button", "schnell-dazu");
+        knopf.type = "button";
+        knopf.appendChild(el("span", "lm-bild klein", "🍱"));
+        const info = el("span", "lm-info");
+        info.appendChild(el("span", "lm-name", m.name));
+        const namen = m.eintraege.map(function (e) { const lm = findeLebensmittel(e.lebensmittelId); return lm ? anzeigeName(lm) : null; }).filter(Boolean);
+        info.appendChild(el("span", "lm-werte", t("mahlzeitZutaten", { anzahl: namen.length, kcal: format(mahlzeitWerte(m)) })));
+        info.appendChild(el("span", "lm-werte mahlzeit-inhalt", namen.join(", ")));
+        knopf.appendChild(info);
+        knopf.addEventListener("click", function () { mahlzeitEintragen(m); });
+        zeile.appendChild(knopf);
+        zeile.appendChild(loeschKnopfKlein("🗑", function () {
+            daten.mahlzeiten = daten.mahlzeiten.filter(function (x) { return x !== m; });
+            speichern();
+            zeichneSchnellwahl();
+            zeigeMeldung(t("geloescht", { name: m.name }));
+        }));
+        const plus = el("button", "schnell-plus-direkt", "＋");
+        plus.type = "button";
+        plus.setAttribute("aria-label", t("mahlzeitDazu", { name: m.name, anzahl: m.eintraege.length }));
+        plus.addEventListener("click", function () { mahlzeitEintragen(m); });
+        zeile.appendChild(plus);
+        panel.appendChild(zeile);
+    });
+}
+// Alle Lebensmittel der Mahlzeit einzeln eintragen (jedes mit seiner Menge, danach frei änderbar)
+function mahlzeitEintragen(m) {
+    if (!daten.plan[aktuellesDatum]) daten.plan[aktuellesDatum] = [];
+    let anzahl = 0;
+    m.eintraege.forEach(function (e) {
+        const lm = findeLebensmittel(e.lebensmittelId);
+        if (!lm) return; // Lebensmittel wurde inzwischen gelöscht
+        daten.plan[aktuellesDatum].push({ id: neueId(), mahlzeit: "tag", lebensmittelId: e.lebensmittelId, gramm: e.gramm,
+            einheit: e.einheit === "stueck" && lm.stueck ? "stueck" : undefined });
+        lm.zuletzt = Date.now();
+        anzahl++;
+    });
+    speichern();
+    zeichneZusammenfassung();
+    zeichnePlan();
+    zeigeMeldung(t("mahlzeitDazu", { name: m.name, anzahl: anzahl }));
+}
+// Fenster "Als Mahlzeit speichern": Einträge des Tages ankreuzen, Namen geben
+function oeffneMahlzeitSpeichern() {
+    const liste = eintraegeVon(aktuellesDatum);
+    const box = $("mahlzeitAuswahl");
+    box.innerHTML = "";
+    liste.forEach(function (e) {
+        const lm = findeLebensmittel(e.lebensmittelId);
+        if (!lm) return;
+        const zeile = el("label", "anzeige-punkt");
+        const kasten = document.createElement("input");
+        kasten.type = "checkbox";
+        kasten.checked = true;
+        kasten.dataset.eintrag = e.id;
+        zeile.appendChild(kasten);
+        const menge = e.einheit === "stueck" && lm.stueck ? feldWert(Math.round(e.gramm / lm.stueck.g * 2) / 2) + " " + einheitText(lm.stueck) : format(e.gramm) + " g";
+        zeile.appendChild(el("span", "", anzeigeName(lm) + " · " + menge));
+        box.appendChild(zeile);
+    });
+    $("mahlzeitName").value = "";
+    $("mahlzeitFehler").hidden = true;
+    oeffneFenster("dialogMahlzeit");
+}
+function mahlzeitSpeichern() {
+    const name = $("mahlzeitName").value.trim().slice(0, 40);
+    const fehler = $("mahlzeitFehler");
+    const gewaehlt = Array.prototype.slice.call(document.querySelectorAll("#mahlzeitAuswahl input:checked")).map(function (k) { return k.dataset.eintrag; });
+    if (!name) { fehler.textContent = t("mahlzeitOhneName"); fehler.hidden = false; $("mahlzeitName").focus(); return; }
+    if (!gewaehlt.length) { fehler.textContent = t("mahlzeitOhneAuswahl"); fehler.hidden = false; return; }
+    const eintraege = eintraegeVon(aktuellesDatum).filter(function (e) { return gewaehlt.indexOf(e.id) !== -1; })
+        .map(function (e) { return { lebensmittelId: e.lebensmittelId, gramm: e.gramm, einheit: e.einheit === "stueck" ? "stueck" : undefined }; });
+    // Wie bei Paketen: nie überschreiben – gleicher Name → "Name (2)"
+    const vergeben = function (n) { return daten.mahlzeiten.some(function (m) { return m.name.toLowerCase() === n.toLowerCase(); }); };
+    let neuerName = name;
+    for (let i = 2; vergeben(neuerName); i++) neuerName = name.slice(0, 34) + " (" + i + ")";
+    daten.mahlzeiten.push({ id: neueId(), name: neuerName, eintraege: eintraege });
+    speichern();
+    schliesseFenster("dialogMahlzeit");
+    zeigeMeldung(neuerName !== name ? t("mahlzeitKopie", { name: neuerName, alt: name }) : t("mahlzeitGespeichert", { name: neuerName }));
+    zeichneSchnellwahl();
 }
 
 // Treffer der Suchleiste oben in "Mein Tag": ein Tipp = eingetragen
@@ -2212,6 +2328,9 @@ function verbinden() {
 
     $("iconFavoriten").addEventListener("click", function () { schnellUmschalten("favoriten"); });
     $("iconZuletzt").addEventListener("click", function () { schnellUmschalten("zuletzt"); });
+    $("iconMahlzeiten").addEventListener("click", function () { schnellUmschalten("mahlzeiten"); });
+    $("mahlzeitSpeichern").addEventListener("click", mahlzeitSpeichern);
+    $("mahlzeitName").addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); mahlzeitSpeichern(); } });
     $("iconRezepte").addEventListener("click", function () {
         if (listeSichtbar && filter === "rezepte") { listeSichtbar = false; zeichneSchnellwahl(); return; } // zweiter Tipp = zu
         lebensmittelMitFilter("rezepte");
@@ -2521,7 +2640,7 @@ document.addEventListener("focusin", function (e) {
 // Speichern/Eintragen zusätzlich OBEN in der Kopfzeile (neben ✕) – dort verdeckt die Tastatur nie etwas
 function kopfSpeichernEinbauen() {
     [["dialogUebung", "#uebungSpeichern"], ["dialogFormular", "#formularSpeichern"], ["dialogRezept", "#formRezept button[type=submit]"],
-     ["dialogEinstellungen", "#formEinstellungen button[type=submit]"], ["dialogMenge", "#mengeEintragen"]].forEach(function (p) {
+     ["dialogEinstellungen", "#formEinstellungen button[type=submit]"], ["dialogMenge", "#mengeEintragen"], ["dialogMahlzeit", "#mahlzeitSpeichern"]].forEach(function (p) {
         const fenster = $(p[0]);
         const original = fenster && fenster.querySelector(p[1]);
         const kopf = fenster && fenster.querySelector(".fenster-kopf");

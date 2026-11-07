@@ -2265,3 +2265,16 @@ body:not([data-tab="plan"]) .creators { display: none; }
 [data-sort-id].wird-gezogen { transition: none; position: relative; z-index: 5; transform-origin: center; box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45); border-radius: 16px; }
 [data-sort-id].wird-gezogen .sport-zeile { outline: 2px solid var(--akzent); }
 .sortiert-gerade { touch-action: none; }
+
+/* ===== Version 5.9: Mahlzeiten speichern ===== */
+.bereich-foods .essen-chips { grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.bereich-foods .essen-chip { font-size: 13px; padding: 0 4px; }
+@media (max-width: 389px) { .bereich-foods .essen-chip .chip-emo { display: none; } }
+.mahlzeit-merken { margin-top: 12px; }
+.mahlzeit-zeile .mahlzeit-inhalt { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.mahlzeit-zeile .schnell-dazu { min-width: 0; }
+.mahlzeit-zeile .lm-info { min-width: 0; }
+#mahlzeitFehler[hidden] { display: none; }
+#dialogMahlzeit .eingabe-name { width: 100%; margin-bottom: 8px; font-size: 16px; }
+@media (max-width: 439px) { .bereich-foods .essen-chip .chip-emo { display: none; } }
+@media (max-width: 359px) { .bereich-foods .essen-chips { grid-template-columns: repeat(2, 1fr); } }
