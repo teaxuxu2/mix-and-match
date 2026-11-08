@@ -3,7 +3,7 @@
    Regel: immer zuerst das Neueste aus dem Netz holen; nur wenn das nicht klappt, die gespeicherte Kopie.
    "no-cache" heißt: beim Server nachfragen, ob es Neues gibt (nicht die alte Browser-Kopie nehmen).
    Wohnhaus-Bild: ein Notvorrat im Keller – benutzt wird er nur, wenn der Laden zu hat. */
-const VORRAT = "mmc-vorrat-v37";
+const VORRAT = "mmc-vorrat-v38";
 const DATEIEN = [
     "./", "./index.html", "./impressum.html", "./datenschutz.html", "./manifest.webmanifest", "./css/style.css", "./css/recht.css",
     "./css/schrift/inter-400.woff", "./css/schrift/inter-500.woff", "./css/schrift/inter-600.woff", "./css/schrift/inter-700.woff",
