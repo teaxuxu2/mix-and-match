@@ -13,6 +13,9 @@
    fürs Essen-Fach nur, wenn du ihn ihm gibst.
 */
 
+// Fassung (Datum) der Datenschutzerklärung – bei Änderungen an datenschutz.html erhöhen.
+const DATENSCHUTZ_FASSUNG = "2026-11-08";
+
 let wolkeIch = null;            // angemeldete Person { id, email } oder null
 let wolkeName = "";
 let wolkeAdmin = false;          // darf Inhalte "für alle" speichern
@@ -263,6 +266,21 @@ function zeichneKonto() {
         form.appendChild(kontoFeld("kontoEmail", "email", t("kontoEmailPh"), "email"));
         form.appendChild(kontoFeld("kontoPasswort", "password", t("kontoPasswortPh"),
             wolkeModus === "registrieren" ? "new-password" : "current-password"));
+        if (wolkeModus === "registrieren") {
+            // Einwilligung (DSGVO): Datenschutz + Gesundheitsdaten (Art. 9) + mindestens 16 Jahre
+            const zustimmung = el("label", "konto-einwilligung");
+            const haken = el("input");
+            haken.type = "checkbox";
+            haken.id = "kontoEinwilligung";
+            zustimmung.appendChild(haken);
+            zustimmung.appendChild(el("span", "", t("kontoEinwilligung")));
+            form.appendChild(zustimmung);
+            const lesen = el("a", "konto-link", t("datenschutzLesen"));
+            lesen.href = "datenschutz.html";
+            lesen.target = "_blank";
+            lesen.rel = "noopener";
+            form.appendChild(lesen);
+        }
         const los = el("button", "knopf-primaer breit", t(wolkeModus === "anmelden" ? "kontoAnmelden" : "kontoRegistrieren"));
         los.type = "submit";
         los.id = "kontoLos";
@@ -344,6 +362,26 @@ function zeichneKonto() {
     });
     box.appendChild(ab);
 
+    // Konto löschen (DSGVO Art. 17) – immer mit zweitem Tipp
+    box.appendChild(el("h3", "block-titel", "🗑 " + t("kontoLoeschenTitel")));
+    box.appendChild(el("p", "unterzeile", t("kontoLoeschenText")));
+    const weg = el("button", "knopf-zweit breit gefahr", t("kontoLoeschen"));
+    weg.type = "button";
+    weg.id = "kontoLoeschen";
+    zweiterTipp(weg, function () {
+        weg.disabled = true;
+        wolke.kontoLoeschen().then(function () {
+            wolkeIch = null; wolkeAdmin = false; trainerVorschlaege = [];
+            try { localStorage.removeItem("mmc_wolke_sitzung"); } catch (e) { /* egal */ }
+            zeichneKonto(); zeichnePlan(); zeichneKontoKnopf();
+            zeigeMeldung(t("kontoGeloescht"));
+        }).catch(function () {
+            weg.disabled = false;
+            $("kontoFehler").textContent = t("kontoLoeschenFehler");
+        });
+    });
+    box.appendChild(weg);
+
     zeichneMeineTrainer();
     zeichneMeineSportler();
 }
@@ -361,10 +399,12 @@ function kontoAbschicken() {
     const passwort = $("kontoPasswort").value;
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { fehler.textContent = t("kontoEmailFalsch"); return; }
     if (passwort.length < 8) { fehler.textContent = t("kontoPasswortKurz"); return; }
+    if (wolkeModus === "registrieren" && !$("kontoEinwilligung").checked) { fehler.textContent = t("kontoEinwilligungFehlt"); return; }
     fehler.textContent = "";
     $("kontoLos").disabled = true;
     const anfrage = wolkeModus === "registrieren"
-        ? wolke.registrieren(email, passwort, ($("kontoName").value || "").trim())
+        ? wolke.registrieren(email, passwort, ($("kontoName").value || "").trim(),
+            { datum: new Date().toISOString(), fassung: DATENSCHUTZ_FASSUNG })
         : wolke.anmelden(email, passwort);
     anfrage.then(function (antwort) {
         if (wolkeModus === "registrieren" && antwort && antwort.bestaetigen) {

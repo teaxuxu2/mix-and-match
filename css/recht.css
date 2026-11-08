@@ -1,0 +1,17 @@
+/* Mix & Match Cal – Aussehen der Seiten Impressum und Datenschutz (gleiche Farben wie die App) */
+@font-face { font-family: "Inter"; font-weight: 400; font-display: swap; src: url("schrift/inter-400.woff") format("woff"); }
+@font-face { font-family: "Inter"; font-weight: 700; font-display: swap; src: url("schrift/inter-700.woff") format("woff"); }
+* { box-sizing: border-box; }
+body { margin: 0; background: #0b1218; color: #eef3f6; font: 16px/1.55 "Inter", system-ui, -apple-system, sans-serif; }
+main { max-width: 720px; margin: 0 auto; padding: max(24px, env(safe-area-inset-top)) 16px 48px; }
+.zurueck { display: inline-block; padding: 10px 14px; border-radius: 12px; background: #18252e; color: #86f7bd; text-decoration: none; font-weight: 700; font-size: 14px; }
+h1 { font-size: 28px; margin: 22px 0 6px; }
+h2 { font-size: 19px; margin: 28px 0 6px; color: #86f7bd; }
+h3 { font-size: 16px; margin: 18px 0 4px; }
+p, li { color: #d3dbe0; }
+a { color: #86f7bd; overflow-wrap: anywhere; }
+ul { padding-left: 20px; }
+.stand { color: #9ca6ad; font-size: 14px; margin: 0; }
+.karte { background: #101923; border: 1px solid #263543; border-radius: 16px; padding: 4px 16px; margin: 14px 0; }
+.fehlt { background: #3b2a0b; color: #f6c95e; border-radius: 6px; padding: 0 6px; }
+.englisch { border-top: 1px solid #263543; margin-top: 36px; }

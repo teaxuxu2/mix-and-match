@@ -1,3 +1,9 @@
+/* Schrift Inter – liegt selbst auf unserem Server (kein Google Fonts → keine Daten an Dritte). */
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 400; font-display: swap; src: url("schrift/inter-400.woff") format("woff"); }
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 500; font-display: swap; src: url("schrift/inter-500.woff") format("woff"); }
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 600; font-display: swap; src: url("schrift/inter-600.woff") format("woff"); }
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 700; font-display: swap; src: url("schrift/inter-700.woff") format("woff"); }
+
 /* =====================================================
    Mix & Match Calories – Aussehen (Design-Agent)
    Handy zuerst: Grundregeln gelten fürs Handy,
@@ -2284,3 +2290,11 @@ body:not([data-tab="plan"]) .creators { display: none; }
 .mahlzeit-zeile .lm-info { display: flex; flex-direction: column; min-width: 0; flex: 1; overflow: hidden; }
 .mahlzeit-zeile .lm-info > span { display: block; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mahlzeit-zeile .knopf-loeschen, .mahlzeit-zeile .schnell-plus-direkt { flex: none; }
+
+/* ===== v5.12 – Rechtliches: Einwilligung, Konto löschen, Links unten im Profil ===== */
+.konto-einwilligung { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; line-height: 1.4; color: var(--text-grau); margin: 4px 0 2px; cursor: pointer; }
+.konto-einwilligung input { flex: none; width: 22px; height: 22px; margin: 1px 0 0; accent-color: var(--akzent); }
+.konto-link { display: inline-block; font-size: 13px; margin: 0 0 6px; color: var(--akzent); padding: 6px 0; }
+.hinweis-medizin { text-align: center; font-size: 12px; color: var(--text-grau); margin: 14px 16px 0; }
+.rechtliches { display: flex; justify-content: center; gap: 10px; font-size: 13px; margin: 6px 0 0; color: var(--text-grau); }
+.rechtliches a { color: var(--text-grau); padding: 8px 4px; }

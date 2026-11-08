@@ -68,11 +68,12 @@ function echteWolke() {
             if (!client && !gemerkt && !ausLink) return Promise.resolve(null);
             return ich().catch(function () { return null; });
         },
-        registrieren: function (email, passwort, name) {
+        // einwilligung: { datum, fassung } – wird beim Konto mitgespeichert (Nachweis nach DSGVO Art. 7)
+        registrieren: function (email, passwort, name, einwilligung) {
             return bereit().then(function (c) {
                 return c.auth.signUp({
                     email: email, password: passwort,
-                    options: { data: { name: name }, emailRedirectTo: location.origin + location.pathname }
+                    options: { data: { name: name, einwilligung: einwilligung || null }, emailRedirectTo: location.origin + location.pathname }
                 });
             }).then(pruefen).then(function (d) { return { bestaetigen: !d.session }; });
         },
@@ -82,6 +83,21 @@ function echteWolke() {
         },
         abmelden: function () {
             return bereit().then(function (c) { return c.auth.signOut(); });
+        },
+        // Konto endgültig löschen: zuerst die eigenen Videos, dann das Konto selbst
+        // (die Datenbank löscht Profil, Sport, Essen und Trainer-Verbindungen automatisch mit).
+        kontoLoeschen: function () {
+            return Promise.all([bereit(), meineId()]).then(function (w) {
+                const c = w[0], id = w[1];
+                return c.storage.from("videos").list(id, { limit: 1000 }).then(function (a) {
+                    const namen = (a.data || []).map(function (d) { return id + "/" + d.name; });
+                    return namen.length ? c.storage.from("videos").remove(namen) : null;
+                }).then(function () {
+                    return c.rpc("konto_loeschen");
+                }).then(pruefen).then(function () {
+                    return c.auth.signOut({ scope: "local" }).catch(function () {});
+                });
+            });
         },
         profil: function () {
             return Promise.all([bereit(), meineId()]).then(function (w) {
