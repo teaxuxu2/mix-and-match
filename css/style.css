@@ -2278,3 +2278,9 @@ body:not([data-tab="plan"]) .creators { display: none; }
 #dialogMahlzeit .eingabe-name { width: 100%; margin-bottom: 8px; font-size: 16px; }
 @media (max-width: 439px) { .bereich-foods .essen-chip .chip-emo { display: none; } }
 @media (max-width: 359px) { .bereich-foods .essen-chips { grid-template-columns: repeat(2, 1fr); } }
+
+/* ===== Version 5.11: Mahlzeit-Zeile – Texte untereinander, nichts läuft in die Knöpfe ===== */
+.mahlzeit-zeile .schnell-dazu { flex: 1 1 auto; overflow: hidden; }
+.mahlzeit-zeile .lm-info { display: flex; flex-direction: column; min-width: 0; flex: 1; overflow: hidden; }
+.mahlzeit-zeile .lm-info > span { display: block; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mahlzeit-zeile .knopf-loeschen, .mahlzeit-zeile .schnell-plus-direkt { flex: none; }
