@@ -1,0 +1,29 @@
+# Hält das kostenlose Supabase-Projekt wach.
+# Supabase pausiert Gratis-Projekte nach etwa einer Woche ohne Nutzung.
+# Dieser kleine Roboter fragt alle 3 Tage einmal die öffentliche Tabelle "gemeinsam" ab –
+# dabei werden keine Daten verändert und nichts Geheimes benutzt
+# (nur die öffentliche Adresse + der öffentliche Schlüssel, die ohnehin in js/wolke-konfig.js stehen).
+name: Supabase wach halten
+
+on:
+  schedule:
+    - cron: "17 6 */3 * *"   # alle 3 Tage um 06:17 UTC
+  workflow_dispatch:          # zusätzlich per Knopf in GitHub → Actions startbar
+
+jobs:
+  anstupsen:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Datenbank einmal kurz fragen
+        run: |
+          URL="https://lrryyxrxnmuzvuiqvifu.supabase.co"
+          SCHLUESSEL="sb_publishable_DxhOyY40VkAJG7iY1V3J_w_QHkNfcUK"
+          CODE=$(curl -s -o antwort.txt -w "%{http_code}" \
+            "$URL/rest/v1/gemeinsam?select=id&limit=1" \
+            -H "apikey: $SCHLUESSEL" -H "Authorization: Bearer $SCHLUESSEL")
+          echo "Antwort von Supabase: $CODE"
+          cat antwort.txt; echo
+          if [ "$CODE" != "200" ]; then
+            echo "::error::Supabase hat nicht normal geantwortet (Code $CODE) – ist das Projekt pausiert? Im Supabase-Dashboard auf 'Restore' klicken."
+            exit 1
+          fi
