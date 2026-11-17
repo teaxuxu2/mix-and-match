@@ -103,6 +103,9 @@ function wolkeAbgleichen() {
             sprache = daten.einstellungen.sprache;
             speichern();
             kellerSchreiben(LOKAL_STAND, String(obenStand));
+            // Daten kamen gerade aus der Wolke → Handy und Wolke sind gleich (Anzeige „Zuletzt online gesichert“)
+            kellerSchreiben("mmc_wolke_zuletzt", String(Date.now()));
+            zeichneKontoStatus();
             wolkeBeimEinspielen = false;
             allesZeichnen();
             zeigeMeldung(t("wolkeGeladen"));
@@ -452,7 +455,7 @@ function zeichneMeineTrainer() {
                 info.appendChild(el("strong", "", t("einladungOffen")));
                 const codeText = el("span", "einladecode", v.einladecode);
                 info.appendChild(codeText);
-                info.appendChild(el("small", "", t("einladungText")));
+                info.appendChild(el("small", "einladung-hinweis", t("einladungText")));
             }
             zeile.appendChild(info);
             if (!v.trainer_id && navigator.clipboard) {
