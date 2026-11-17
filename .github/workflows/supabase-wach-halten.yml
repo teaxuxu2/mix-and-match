@@ -18,9 +18,10 @@ jobs:
         run: |
           URL="https://lrryyxrxnmuzvuiqvifu.supabase.co"
           SCHLUESSEL="sb_publishable_DxhOyY40VkAJG7iY1V3J_w_QHkNfcUK"
-          CODE=$(curl -s -o antwort.txt -w "%{http_code}" \
+          # Mehrere Versuche mit Pause: direkt nach dem Aufwecken braucht die Adresse ein paar Minuten.
+          CODE=$(curl -s --retry 6 --retry-delay 30 --retry-all-errors -o antwort.txt -w "%{http_code}" \
             "$URL/rest/v1/gemeinsam?select=id&limit=1" \
-            -H "apikey: $SCHLUESSEL" -H "Authorization: Bearer $SCHLUESSEL")
+            -H "apikey: $SCHLUESSEL" -H "Authorization: Bearer $SCHLUESSEL") || CODE="keine Verbindung (Adresse nicht gefunden)"
           echo "Antwort von Supabase: $CODE"
           cat antwort.txt; echo
           if [ "$CODE" != "200" ]; then
