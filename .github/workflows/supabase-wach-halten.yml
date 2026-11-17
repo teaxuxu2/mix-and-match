@@ -23,7 +23,7 @@ jobs:
             "$URL/rest/v1/gemeinsam?select=id&limit=1" \
             -H "apikey: $SCHLUESSEL" -H "Authorization: Bearer $SCHLUESSEL") || CODE="keine Verbindung (Adresse nicht gefunden)"
           echo "Antwort von Supabase: $CODE"
-          cat antwort.txt; echo
+          cat antwort.txt 2>/dev/null || true; echo
           if [ "$CODE" != "200" ]; then
             echo "::error::Supabase hat nicht normal geantwortet (Code $CODE) – ist das Projekt pausiert? Im Supabase-Dashboard auf 'Restore' klicken."
             exit 1
