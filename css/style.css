@@ -2301,3 +2301,10 @@ body:not([data-tab="plan"]) .creators { display: none; }
 
 /* v5.15 – Hinweis unter dem Einladungs-Code ganz anzeigen (nicht mit „…“ abschneiden) */
 .einladung-hinweis { display: block; white-space: normal !important; overflow: visible !important; text-overflow: clip !important; line-height: 1.35; }
+
+/* v5.16 – Trainer-Ansicht: Übungs-Auswahl wie auf der Training-Seite; „Passwort vergessen?“ */
+#trainerSportBox { margin: 6px 0 14px; display: flex; flex-direction: column; gap: 8px; }
+#trainerSportBox .essen-chips { margin: 0; }
+#trainerSportAuswahl[hidden] { display: none !important; }
+.knopf-link { background: none; border: 0; padding: 10px 0; text-align: center; font: inherit; font-size: 14px; cursor: pointer; text-decoration: underline; }
+.passwort-neu { margin: 6px 0 16px; }

@@ -289,8 +289,41 @@ function zeichneKonto() {
         los.id = "kontoLos";
         form.appendChild(los);
         form.addEventListener("submit", function (e) { e.preventDefault(); kontoAbschicken(); });
+        if (wolkeModus === "anmelden") {
+            const vergessen = el("button", "konto-link knopf-link", t("passwortVergessen"));
+            vergessen.type = "button";
+            vergessen.id = "kontoVergessen";
+            vergessen.addEventListener("click", passwortVergessenSchicken);
+            form.appendChild(vergessen);
+        }
         box.appendChild(form);
         return;
+    }
+
+    // Über den Link aus der „Passwort zurücksetzen“-Mail gekommen → neues Passwort festlegen
+    if (wolke.passwortLinkGeoeffnet && wolke.passwortLinkGeoeffnet()) {
+        const neuForm = el("form", "konto-form passwort-neu");
+        neuForm.noValidate = true;
+        neuForm.appendChild(el("h3", "block-titel", "🔑 " + t("passwortNeuTitel")));
+        neuForm.appendChild(kontoFeld("kontoNeuesPasswort", "password", t("passwortNeuPh"), "new-password"));
+        const speichern = el("button", "knopf-primaer breit", t("passwortNeuSpeichern"));
+        speichern.type = "submit";
+        speichern.id = "kontoPasswortSpeichern";
+        neuForm.appendChild(speichern);
+        neuForm.addEventListener("submit", function (e) {
+            e.preventDefault();
+            const pw = $("kontoNeuesPasswort").value;
+            if (pw.length < 8) { $("kontoFehler").textContent = t("kontoPasswortKurz"); return; }
+            speichern.disabled = true;
+            wolke.neuesPasswort(pw).then(function () {
+                zeigeMeldung(t("passwortGeaendert"));
+                zeichneKonto();
+            }).catch(function () {
+                speichern.disabled = false;
+                $("kontoFehler").textContent = t("wolkeFehler");
+            });
+        });
+        box.appendChild(neuForm);
     }
 
     // ---------- angemeldet ----------
@@ -396,6 +429,22 @@ function kontoFeld(id, typ, platzhalter, autocomplete) {
     return feld;
 }
 
+// „Passwort vergessen?“ → E-Mail mit Link schicken
+function passwortVergessenSchicken() {
+    const fehler = $("kontoFehler");
+    const email = $("kontoEmail").value.trim();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { fehler.textContent = t("passwortVergessenEmail"); $("kontoEmail").focus(); return; }
+    fehler.textContent = "";
+    $("kontoVergessen").disabled = true;
+    wolke.passwortVergessen(email).then(function () {
+        $("kontoInhalt").innerHTML = "";
+        $("kontoInhalt").appendChild(el("p", "unterzeile", t("passwortMailGesendet", { email: email })));
+    }).catch(function (e) {
+        $("kontoVergessen").disabled = false;
+        fehler.textContent = /rate|limit|seconds/i.test(String(e && e.message || "")) ? t("mailLimit") : t("wolkeFehler");
+    });
+}
+
 function kontoAbschicken() {
     const fehler = $("kontoFehler");
     const email = $("kontoEmail").value.trim();
@@ -421,7 +470,8 @@ function kontoAbschicken() {
         const text = String(e && e.message || "");
         fehler.textContent = /invalid|credentials/i.test(text) ? t("kontoFalsch")
             : /already|registered/i.test(text) ? t("kontoGibtEs")
-            : /confirm/i.test(text) ? t("kontoNichtBestaetigt") : t("wolkeFehler");
+            : /confirm/i.test(text) && !/sending/i.test(text) ? t("kontoNichtBestaetigt")
+            : /rate|limit|sending/i.test(text) ? t("mailLimit") : t("wolkeFehler");
         if ($("kontoLos")) $("kontoLos").disabled = false;
     });
 }
@@ -510,6 +560,9 @@ function oeffneTrainerAnsicht(s) {
     trainerDatum = heuteAlsText();
     $("trainerTitel").textContent = s.name || t("sportlerin");
     $("trainerEssenSuche").value = "";
+    $("trainerSportSuche").value = "";
+    trainerSportAnsicht = null;
+    $("trainerEssenInhalt").innerHTML = "";
     oeffneFenster("dialogTrainer");
     trainerNeuLaden();
 }
@@ -527,7 +580,7 @@ function trainerNeuLaden() {
 }
 
 function zeichneTrainerAnsicht() {
-    const box = $("trainerInhalt");
+    let box = $("trainerInhalt");
     box.innerHTML = "";
     $("trainerDatum").textContent = datumBeschriftung(trainerDatum);
     const d = trainerDaten || {};
@@ -554,13 +607,11 @@ function zeichneTrainerAnsicht() {
         box.appendChild(zeile);
     });
 
-    const neu = el("button", "knopf-primaer breit", t("trainerUebungEintragen"));
-    neu.type = "button";
-    neu.id = "trainerUebungNeu";
-    neu.addEventListener("click", trainerUebungNeu);
-    box.appendChild(neu);
+    zeichneTrainerSportAuswahl();
 
-    // --- Essen ---
+    // --- Essen --- (eigener Bereich unter der Übungs-Auswahl)
+    box = $("trainerEssenInhalt");
+    box.innerHTML = "";
     box.appendChild(el("h3", "block-titel", "🍽️ " + t("essen")));
     const essenBox = $("trainerEssenBox");
     if (!trainerAnsicht.essen_sichtbar || !d.essen || !d.essen.kompakt) {
@@ -625,19 +676,127 @@ function trainerUebungNeu() {
     const sportlerId = trainerAnsicht.id;
     const datum = trainerDatum;
     uebungZiel = function (u) {
+        // auch in die eigene Übungs-Liste des Trainers (für „Meine“, ⭐ und Pakete), gleicher Name = gleiche Übung
+        if (!daten.sport.bloecke.some(function (b) { return b.name.toLowerCase() === u.name.toLowerCase(); })) {
+            daten.sport.bloecke.push(Object.assign(uebungKopie(u), { id: neueId(), blockId: null, vomTrainer: false, favorit: false, erledigt: false }));
+            sportSpeichern();
+        }
+        if (u.videoId) zeigeMeldung(t("trainerVideoLaedt"));
         const senden = function () {
             return wolke.eintragSenden(sportlerId, "sport", datum, u).then(function () {
                 zeigeMeldung(t("trainerGesendet", { name: u.name }));
                 trainerNeuLaden();
             }).catch(function () { zeigeMeldung(t("wolkeFehler"), true); });
         };
-        if (!u.videoId) return senden();
-        // Video in den Ordner der Sportlerin hochladen, damit sie es sehen kann
-        return videoLaden(u.videoId).then(function (blob) {
-            return blob ? wolke.videoHochladen(sportlerId + "/" + u.videoId, blob) : null;
-        }).then(senden).catch(function () { zeigeMeldung(t("videoFehler"), true); });
+        return trainerVideoMitnehmen(sportlerId, u).then(senden).catch(function (f) {
+            zeigeMeldung(t(f && f.zuGross ? "videoZuGrossTrainer" : "videoFehler"), true);
+        });
     };
     neueUebung();
+}
+
+// Video einer Übung in den Ordner der Sportlerin legen, damit sie es sehen kann.
+// Liegt das Video nicht auf diesem Handy (z. B. eine Übung aus IHRER Liste), ist es schon bei ihr.
+function trainerVideoMitnehmen(sportlerId, u) {
+    if (!u.videoId) return Promise.resolve();
+    return videoLaden(u.videoId).then(function (blob) {
+        if (!blob) return null;
+        if (blob.size > VIDEO_MAX_MB * 1024 * 1024) { const f = new Error("zu groß"); f.zuGross = true; throw f; }
+        return wolke.videoHochladen(sportlerId + "/" + u.videoId, blob, { nichtUeberschreiben: true });
+    });
+}
+
+// Mehrere Übungen (z. B. ein ganzes Paket) nacheinander an die Sportlerin schicken
+function trainerUebungenSenden(liste, name) {
+    const sportlerId = trainerAnsicht.id, datum = trainerDatum;
+    if (liste.some(function (v) { return v.videoId; })) zeigeMeldung(t("trainerVideoLaedt"));
+    return liste.reduce(function (kette, v) {
+        return kette.then(function () {
+            const u = uebungKopie(v);
+            delete u.id; delete u.blockId; u.erledigt = false; u.favorit = false;
+            return trainerVideoMitnehmen(sportlerId, u).then(function () {
+                return wolke.eintragSenden(sportlerId, "sport", datum, u);
+            });
+        });
+    }, Promise.resolve()).then(function () {
+        zeigeMeldung(t("trainerGesendet", { name: name }));
+        return trainerNeuLaden();
+    }).catch(function (f) {
+        zeigeMeldung(t(f && f.zuGross ? "videoZuGrossTrainer" : "wolkeFehler"), true);
+        trainerNeuLaden();
+    });
+}
+
+// Auswahl wie auf der Training-Seite: Suche, ⭐ Favoriten, 🕘 Häufig, 📦 Pakete.
+// Quelle: Übungen und Pakete der Sportlerin UND die eigenen des Trainers.
+let trainerSportAnsicht = null; // null | "fav" | "haeufig" | "pakete"
+function zeichneTrainerSportAuswahl() {
+    const auswahl = $("trainerSportAuswahl");
+    if (!auswahl) return;
+    auswahl.innerHTML = "";
+    const text = $("trainerSportSuche").value.trim();
+    [["trainerChipFav", "fav"], ["trainerChipHaeufig", "haeufig"], ["trainerChipPakete", "pakete"]].forEach(function (p) {
+        const an = !text && trainerSportAnsicht === p[1];
+        $(p[0]).classList.toggle("aktiv", an);
+        $(p[0]).setAttribute("aria-pressed", an ? "true" : "false");
+    });
+    auswahl.hidden = !text && !trainerSportAnsicht;
+    if (auswahl.hidden) return;
+    const ihr = (trainerDaten && trainerDaten.sport) || {};
+    const name = trainerAnsicht.name || t("sportlerin");
+    const ihreBloecke = (ihr.bloecke || []).filter(function (b) { return b && b.name; });
+    const ihrePakete = (ihr.pakete || []).filter(function (p) { return p && p.name && (p.uebungen || []).length; });
+    // gleicher Name nur einmal – ihre Version zuerst (ihr Video liegt schon bei ihr)
+    function ohneDoppelte(liste) {
+        const gesehen = {};
+        return liste.filter(function (b) { const k = b.name.toLowerCase(); if (gesehen[k]) return false; gesehen[k] = true; return true; });
+    }
+    function einzeln(b) {
+        return trainingZeile(b, function () { trainerUebungenSenden([b], b.name); });
+    }
+    function abschnitt(titel) { auswahl.appendChild(el("p", "block-titel basis-titel", titel)); }
+
+    if (text) {
+        const woerter = suchNormal(text).split(" ").filter(Boolean);
+        const passt = function (b) { const n = suchNormal(b.name); return woerter.every(function (w) { return n.indexOf(w) !== -1; }); };
+        const eigene = ohneDoppelte(ihreBloecke.concat(daten.sport.bloecke)).filter(passt);
+        const pakete = ihrePakete.concat(daten.sport.pakete).filter(passt);
+        pakete.forEach(function (p) { auswahl.appendChild(trainingZeile(p, function () { trainerUebungenSenden(p.uebungen, p.name); })); });
+        eigene.slice(0, 15).forEach(function (b) { auswahl.appendChild(einzeln(b)); });
+        // dazu Ideen aus der Bibliothek
+        sportTrefferFinden(text).filter(function (x) { return !x.block; }).slice(0, 8).forEach(function (x) {
+            const v = x.vorlage();
+            auswahl.appendChild(trainingZeile(x.zeige, function () { trainerUebungenSenden([v], v.name); }));
+        });
+        if (!auswahl.children.length) auswahl.appendChild(el("p", "leer klein", t("sportSucheLeer")));
+    } else if (trainerSportAnsicht === "pakete") {
+        abschnitt(t("trainerIhre", { name: name }));
+        if (!ihrePakete.length) auswahl.appendChild(el("p", "leer klein", t("paketeLeer")));
+        ihrePakete.forEach(function (p) { auswahl.appendChild(trainingZeile(p, function () { trainerUebungenSenden(p.uebungen, p.name); })); });
+        abschnitt(t("trainerMeine"));
+        if (!daten.sport.pakete.length) auswahl.appendChild(el("p", "leer klein", t("paketeLeer")));
+        daten.sport.pakete.forEach(function (p) { auswahl.appendChild(trainingZeile(p, function () { trainerUebungenSenden(p.uebungen, p.name); })); });
+        abschnitt(t("basisPakete"));
+        SESSION_VORLAGEN.forEach(function (v) {
+            const pname = daten.einstellungen.sprache === "en" ? v.en : v.de;
+            const uebungen = basisPaketUebungen(v);
+            auswahl.appendChild(trainingZeile({ name: "🔒 " + pname, uebungen: uebungen }, function () { trainerUebungenSenden(uebungen, pname); }));
+        });
+    } else {
+        const fav = trainerSportAnsicht === "fav";
+        // Häufig: was sie am öftesten trainiert
+        const zahl = {};
+        Object.keys(ihr.tage || {}).forEach(function (d) { (ihr.tage[d] || []).forEach(function (u) { if (u && u.name) zahl[u.name.toLowerCase()] = (zahl[u.name.toLowerCase()] || 0) + 1; }); });
+        const sortiert = function (liste) { return liste.slice().sort(function (a, b) { return (zahl[b.name.toLowerCase()] || 0) - (zahl[a.name.toLowerCase()] || 0); }); };
+        const ihre = sortiert(ihreBloecke.filter(function (b) { return !fav || b.favorit; }));
+        const meine = sortiert(daten.sport.bloecke.filter(function (b) { return !fav || b.favorit; }));
+        abschnitt(t("trainerIhre", { name: name }));
+        if (!ihre.length) auswahl.appendChild(el("p", "leer klein", t(fav ? "favLeerSport" : "trainerKeineUebungen")));
+        ihre.forEach(function (b) { auswahl.appendChild(einzeln(b)); });
+        abschnitt(t("trainerMeine"));
+        if (!meine.length) auswahl.appendChild(el("p", "leer klein", t(fav ? "favLeerSport" : "trainerKeineUebungen")));
+        meine.forEach(function (b) { auswahl.appendChild(einzeln(b)); });
+    }
 }
 
 // Essensvorschlag: suchen → Gramm → vorschlagen
@@ -689,7 +848,8 @@ function wolkeStarten() {
         if (!wolkeIch) return;
         return wolke.profil().then(function (p) { wolkeName = p ? p.name : ""; wolkeAdmin = !!(p && p.admin); }).catch(function () {})
             .then(wolkeAbgleichen)
-            .then(trainerPostHolen);
+            .then(trainerPostHolen)
+            .then(function () { if (wolke.passwortLinkGeoeffnet && wolke.passwortLinkGeoeffnet()) oeffneKonto(); });
     }).catch(function () { /* offline */ });
 }
 
@@ -698,6 +858,15 @@ function kontoVerbinden() {
     $("trainerZurueck").addEventListener("click", function () { trainerDatum = tageVerschieben(trainerDatum, -1); zeichneTrainerAnsicht(); });
     $("trainerVor").addEventListener("click", function () { trainerDatum = tageVerschieben(trainerDatum, 1); zeichneTrainerAnsicht(); });
     $("trainerEssenSuche").addEventListener("input", zeichneTrainerEssenTreffer);
+    $("trainerSportSuche").addEventListener("input", zeichneTrainerSportAuswahl);
+    $("trainerUebungNeu").addEventListener("click", trainerUebungNeu);
+    [["trainerChipFav", "fav"], ["trainerChipHaeufig", "haeufig"], ["trainerChipPakete", "pakete"]].forEach(function (p) {
+        $(p[0]).addEventListener("click", function () {
+            $("trainerSportSuche").value = "";
+            trainerSportAnsicht = trainerSportAnsicht === p[1] ? null : p[1];
+            zeichneTrainerSportAuswahl();
+        });
+    });
     $("dialogTrainer").addEventListener("close", function () { trainerAnsicht = null; trainerDaten = null; });
     // Wenn man zur App zurückkommt: Post vom Trainer abholen
     document.addEventListener("visibilitychange", function () { if (!document.hidden && wolkeIch) trainerPostHolen(); });

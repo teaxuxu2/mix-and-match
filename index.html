@@ -536,6 +536,22 @@
             <button type="button" class="knopf-pfeil" id="trainerVor" data-t-aria="tagVor" aria-label="Next day">›</button>
         </div>
         <div id="trainerInhalt"></div>
+        <!-- Übungen für die Sportlerin eintragen – genau wie auf der Training-Seite -->
+        <div id="trainerSportBox">
+            <p class="unterzeile" data-t="trainerUebungFuer">Add exercises for this day:</p>
+            <label class="suche">
+                <span aria-hidden="true">🔍</span>
+                <input id="trainerSportSuche" type="search" data-t-ph="sportSuchePh" placeholder="Search exercise …" autocomplete="off" enterkeyhint="search">
+            </label>
+            <div class="essen-chips" role="group">
+                <button type="button" class="essen-chip" id="trainerChipFav" aria-pressed="false"><span class="chip-emo" aria-hidden="true">⭐ </span><span data-t="filterFav">Favorites</span></button>
+                <button type="button" class="essen-chip" id="trainerChipHaeufig" aria-pressed="false"><span class="chip-emo" aria-hidden="true">🕘 </span><span data-t="haeufig">Frequent</span></button>
+                <button type="button" class="essen-chip" id="trainerChipPakete" aria-pressed="false"><span class="chip-emo" aria-hidden="true">📦 </span><span data-t="pakete">Packages</span></button>
+            </div>
+            <button type="button" class="neu-zeile" id="trainerUebungNeu"><span class="neu-plus" aria-hidden="true">＋</span><span class="sport-info"><strong data-t="neuAnlegen">Create new</strong><small data-t="trainerNeuKurz">New exercise, also with video</small></span><span class="knopf-icon klein" aria-hidden="true">›</span></button>
+            <div id="trainerSportAuswahl" class="liste training-auswahl" hidden></div>
+        </div>
+        <div id="trainerEssenInhalt"></div>
         <div id="trainerEssenBox" hidden>
             <p class="unterzeile" data-t="essenVorschlagen">Suggest food (counts only after confirmation):</p>
             <label class="suche">

@@ -19,6 +19,9 @@ function echteWolke() {
         return typeof WOLKE_KONFIG !== "undefined" && !!WOLKE_KONFIG.url && !!WOLKE_KONFIG.anonSchluessel;
     }
 
+    // Kam die Person über den Link „Passwort zurücksetzen“ aus der E-Mail? (Supabase löscht die Adresse danach)
+    let passwortLink = /type=recovery/.test(location.hash || "");
+
     function bereit() {
         if (client) return Promise.resolve(client);
         if (!konfiguriert()) return Promise.reject(new Error("nicht eingerichtet"));
@@ -62,7 +65,7 @@ function echteWolke() {
         sitzung: function () {
             if (!konfiguriert()) return Promise.resolve(null);
             // Noch nie angemeldet und kein Bestätigungs-Link geöffnet? Dann Supabase gar nicht erst laden.
-            const ausLink = /access_token|refresh_token|type=signup/.test(location.hash) || /[?&]code=/.test(location.search);
+            const ausLink = /access_token|refresh_token|type=signup|type=recovery/.test(location.hash) || /[?&]code=/.test(location.search);
             let gemerkt = null;
             try { gemerkt = localStorage.getItem("mmc_wolke_sitzung"); } catch (e) { gemerkt = null; }
             if (!client && !gemerkt && !ausLink) return Promise.resolve(null);
@@ -80,6 +83,17 @@ function echteWolke() {
         anmelden: function (email, passwort) {
             return bereit().then(function (c) { return c.auth.signInWithPassword({ email: email, password: passwort }); })
                 .then(pruefen);
+        },
+        // Passwort vergessen: Supabase schickt eine E-Mail mit Link zurück in die App
+        passwortVergessen: function (email) {
+            return bereit().then(function (c) {
+                return c.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+            }).then(pruefen);
+        },
+        passwortLinkGeoeffnet: function () { return passwortLink; },
+        neuesPasswort: function (passwort) {
+            return bereit().then(function (c) { return c.auth.updateUser({ password: passwort }); })
+                .then(pruefen).then(function () { passwortLink = false; });
         },
         abmelden: function () {
             return bereit().then(function (c) { return c.auth.signOut(); });
@@ -241,10 +255,16 @@ function echteWolke() {
         },
 
         // ---------- Videos ----------
-        videoHochladen: function (pfad, blob) {
+        // optionen.nichtUeberschreiben: für Trainer – sie dürfen im Ordner der Sportlerin nur NEU anlegen
+        // (Überschreiben bräuchte ein Recht, das Trainer absichtlich nicht haben). Gibt es die Datei schon: auch gut.
+        videoHochladen: function (pfad, blob, optionen) {
+            const neuAnlegen = !!(optionen && optionen.nichtUeberschreiben);
             return bereit().then(function (c) {
-                return c.storage.from("videos").upload(pfad, blob, { upsert: true, contentType: blob.type || "video/mp4" });
-            }).then(pruefen);
+                return c.storage.from("videos").upload(pfad, blob, { upsert: !neuAnlegen, contentType: blob.type || "video/mp4" });
+            }).then(function (r) {
+                if (neuAnlegen && r && r.error && /exist|duplicate|409/i.test(String(r.error.message || r.error.statusCode || r.error.error || ""))) return null;
+                return pruefen(r);
+            });
         },
         videoAdresse: function (pfad) {
             return bereit().then(function (c) { return c.storage.from("videos").createSignedUrl(pfad, 3600); })
